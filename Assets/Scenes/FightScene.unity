@@ -570,7 +570,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   healthSlider: {fileID: 1153135824}
   easeHealthSlider: {fileID: 633282993}
-  maxHealth: 10
+  maxHealth: 150
   health: 0
   lerpSpeed: 0.02
 --- !u!1 &232600793
@@ -953,6 +953,10 @@ MonoBehaviour:
       m_Calls: []
     m_ActionId: 9fffcdb9-6f90-4b90-8f51-1146200ab472
     m_ActionName: Gameplay/Move[/Keyboard/upArrow,/Keyboard/downArrow,/Keyboard/leftArrow,/Keyboard/rightArrow]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 7d56cea2-3b75-403c-b465-7e191f23e04f
+    m_ActionName: Gameplay/Block[/Keyboard/rightCtrl]
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: Gameplay
@@ -4251,6 +4255,10 @@ MonoBehaviour:
       m_Calls: []
     m_ActionId: 9fffcdb9-6f90-4b90-8f51-1146200ab472
     m_ActionName: Gameplay/Move[/Keyboard/upArrow,/Keyboard/downArrow,/Keyboard/leftArrow]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 8e43aef1-e927-417e-a542-df66b38ab8cf
+    m_ActionName: Gameplay/Block[/Keyboard/space]
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: Gameplay

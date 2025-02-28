@@ -6,9 +6,9 @@ public class CharacterTwoCombat : CombatBase
 {
     protected override Dictionary<KeyCode, string> AttackMoves => new Dictionary<KeyCode, string>
     {
-        { KeyCode.M, "Jab" },
+        { KeyCode.L, "Jab" },
         { KeyCode.K, "Roundhouse" },
-        { KeyCode.L, "Elbow" }
+        { KeyCode.M, "Elbow" }
     };
 }
 
