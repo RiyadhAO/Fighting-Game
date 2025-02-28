@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -5,34 +7,46 @@ public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement Settings")]
     public float speed = 5f;
-    public Transform enemy; // Reference to the enemy
+    public float blockSpeedMultiplier = 0.5f;
+    public Transform enemy;
 
     private Vector2 moveInput;
     private Rigidbody rb;
     private PlayerInput playerInput;
     private InputAction moveAction;
+    private InputAction blockAction;
+
+    private bool isBlocking = false;
+    private Hurtbox[] normalHurtboxes;
+    private Hurtbox[] blockingHurtboxes;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
         playerInput = GetComponent<PlayerInput>();
 
-        // Get the Move action from the PlayerInput component
         moveAction = playerInput.actions["Move"];
+        blockAction = playerInput.actions["Block"];
+
+        Hurtbox[] allHurtboxes = GetComponentsInChildren<Hurtbox>();
+        normalHurtboxes = System.Array.FindAll(allHurtboxes, hb => !hb.isBlockingHurtbox);
+        blockingHurtboxes = System.Array.FindAll(allHurtboxes, hb => hb.isBlockingHurtbox);
     }
 
     private void OnEnable()
     {
-        // Subscribe to the Move action
         moveAction.performed += OnMove;
         moveAction.canceled += OnMove;
+        blockAction.performed += OnBlockStart;
+        blockAction.canceled += OnBlockEnd;
     }
 
     private void OnDisable()
     {
-        // Unsubscribe from the Move action
         moveAction.performed -= OnMove;
         moveAction.canceled -= OnMove;
+        blockAction.performed -= OnBlockStart;
+        blockAction.canceled -= OnBlockEnd;
     }
 
     public void OnMove(InputAction.CallbackContext context)
@@ -40,24 +54,46 @@ public class PlayerMovement : MonoBehaviour
         moveInput = context.ReadValue<Vector2>();
     }
 
+    private void OnBlockStart(InputAction.CallbackContext context)
+    {
+        isBlocking = true;
+        SetHurtboxState(normalHurtboxes, false);
+        SetHurtboxState(blockingHurtboxes, true);
+    }
+
+    private void OnBlockEnd(InputAction.CallbackContext context)
+    {
+        isBlocking = false;
+        SetHurtboxState(normalHurtboxes, true);
+        SetHurtboxState(blockingHurtboxes, false);
+    }
+
+    private void SetHurtboxState(Hurtbox[] hurtboxes, bool state)
+    {
+        foreach (var hb in hurtboxes)
+        {
+            hb.gameObject.SetActive(state);
+        }
+    }
+
     private void FixedUpdate()
     {
-        if (enemy == null) return; // Ensure there's an enemy to face
+        if (enemy == null) return;
 
-        // Move player based on input
-        Vector3 movement = new Vector3(moveInput.x, 0, moveInput.y) * speed * Time.fixedDeltaTime;
+        float currentSpeed = isBlocking ? speed * blockSpeedMultiplier : speed;
+        Vector3 movement = new Vector3(moveInput.x, 0, moveInput.y) * currentSpeed * Time.fixedDeltaTime;
         rb.MovePosition(rb.position + movement);
 
-        // Rotate towards the enemy while maintaining Y-axis only
         Vector3 direction = enemy.position - transform.position;
-        direction.y = 0; // Keep rotation flat on the horizontal plane
+        direction.y = 0;
 
         if (direction != Vector3.zero)
         {
-            // Apply a rotation offset to fix the incorrect facing direction
             Quaternion targetRotation = Quaternion.LookRotation(direction) * Quaternion.Euler(0, -90, 0);
             rb.MoveRotation(targetRotation);
         }
     }
 }
+
+
 

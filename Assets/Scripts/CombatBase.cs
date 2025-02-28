@@ -6,10 +6,21 @@ public abstract class CombatBase : MonoBehaviour
 {
     public Animator animator;
     protected bool isAttacking = false;
-    public Hitbox hitbox;
 
-    // Dictionary mapping key inputs to attack names
+    // Dictionary of attack names linked to hitboxes
+    public Dictionary<string, Hitbox> attackHitboxes = new Dictionary<string, Hitbox>();
+
     protected abstract Dictionary<KeyCode, string> AttackMoves { get; }
+
+    protected virtual void Start()
+    {
+        // Automatically detect and store hitboxes for each move
+        Hitbox[] hitboxComponents = GetComponentsInChildren<Hitbox>();
+        foreach (Hitbox hitbox in hitboxComponents)
+        {
+            attackHitboxes[hitbox.attackName] = hitbox;
+        }
+    }
 
     protected virtual void Update()
     {
@@ -17,22 +28,37 @@ public abstract class CombatBase : MonoBehaviour
         {
             if (Input.GetKeyDown(move.Key) && !isAttacking)
             {
-                PerformAttack(move.Value);
+                StartAttack(move.Value);
             }
         }
     }
 
-    protected void PerformAttack(string attackName)
+    protected void StartAttack(string attackName)
     {
+        if (!attackHitboxes.ContainsKey(attackName)) return;
+
         isAttacking = true;
         animator.SetTrigger(attackName);
-        hitbox.ActivateHitbox(); // Enable hitbox for attack
-        StartCoroutine(ResetAttack());
     }
 
-    protected IEnumerator ResetAttack()
+    // Called by animation events at the right frame
+    public void ActivateHitbox(string attackName)
     {
-        yield return new WaitForSeconds(0.2f); // Ensures quick response time
-        isAttacking = false;
+        if (attackHitboxes.ContainsKey(attackName))
+        {
+            attackHitboxes[attackName].ActivateHitbox();
+        }
+    }
+
+    // Called by animation events to turn off hitbox
+    public void DeactivateHitbox(string attackName)
+    {
+        if (attackHitboxes.ContainsKey(attackName))
+        {
+            attackHitboxes[attackName].DeactivateHitbox();
+        }
+        isAttacking = false; // Allow next attack
     }
 }
+
+
