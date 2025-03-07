@@ -4,11 +4,12 @@ using UnityEngine;
 
 public class CharacterOneCombat : CombatBase
 {
-    protected override Dictionary<KeyCode, string> AttackMoves => new Dictionary<KeyCode, string>
+    protected override Dictionary<string, string> AttackMoves => new Dictionary<string, string>
     {
-        { KeyCode.E, "Jab" },
-        { KeyCode.K, "Uppercut" },
-        { KeyCode.L, "Hook" }
+        { "j", "Jab" },
+        { "k", "Cross" },
+        { "l", "LowKick" },
+        { "p", "Tackle" } // New Tackle Attack
     };
 }
 

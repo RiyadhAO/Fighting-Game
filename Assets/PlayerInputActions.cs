@@ -44,6 +44,33 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Attack"",
+                    ""type"": ""Button"",
+                    ""id"": ""fff14ba7-8bf6-45fb-a4ff-dc10d487d25d"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""SlipStep"",
+                    ""type"": ""Button"",
+                    ""id"": ""801947df-7eeb-4666-88e8-a7f3e3f3e0a5"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""EvasiveRoll"",
+                    ""type"": ""Button"",
+                    ""id"": ""a81547d7-0000-4b08-ab36-a01ca15fc13b"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -112,6 +139,72 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""action"": ""Block"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""2e3eee69-30cf-45aa-a9dd-90f717223156"",
+                    ""path"": ""<Keyboard>/j"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Attack"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""902bb2de-3013-4abe-9397-ee033d51484f"",
+                    ""path"": ""<Keyboard>/k"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Attack"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""8201ff2a-95e3-415b-9cc3-ccd02aae4465"",
+                    ""path"": ""<Keyboard>/l"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Attack"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""13486ea8-57d0-4628-ab52-5e2ee0d47054"",
+                    ""path"": ""<Keyboard>/h"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Attack"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""1746ca43-ac34-474a-80de-e51250a7d894"",
+                    ""path"": ""<Keyboard>/e"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SlipStep"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""b59c1d96-665b-47fe-97db-35c602fdcf94"",
+                    ""path"": ""<Keyboard>/leftShift"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""EvasiveRoll"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -122,6 +215,9 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         m_Gameplay = asset.FindActionMap("Gameplay", throwIfNotFound: true);
         m_Gameplay_Move = m_Gameplay.FindAction("Move", throwIfNotFound: true);
         m_Gameplay_Block = m_Gameplay.FindAction("Block", throwIfNotFound: true);
+        m_Gameplay_Attack = m_Gameplay.FindAction("Attack", throwIfNotFound: true);
+        m_Gameplay_SlipStep = m_Gameplay.FindAction("SlipStep", throwIfNotFound: true);
+        m_Gameplay_EvasiveRoll = m_Gameplay.FindAction("EvasiveRoll", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -185,12 +281,18 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
     private List<IGameplayActions> m_GameplayActionsCallbackInterfaces = new List<IGameplayActions>();
     private readonly InputAction m_Gameplay_Move;
     private readonly InputAction m_Gameplay_Block;
+    private readonly InputAction m_Gameplay_Attack;
+    private readonly InputAction m_Gameplay_SlipStep;
+    private readonly InputAction m_Gameplay_EvasiveRoll;
     public struct GameplayActions
     {
         private @PlayerInputActions m_Wrapper;
         public GameplayActions(@PlayerInputActions wrapper) { m_Wrapper = wrapper; }
         public InputAction @Move => m_Wrapper.m_Gameplay_Move;
         public InputAction @Block => m_Wrapper.m_Gameplay_Block;
+        public InputAction @Attack => m_Wrapper.m_Gameplay_Attack;
+        public InputAction @SlipStep => m_Wrapper.m_Gameplay_SlipStep;
+        public InputAction @EvasiveRoll => m_Wrapper.m_Gameplay_EvasiveRoll;
         public InputActionMap Get() { return m_Wrapper.m_Gameplay; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -206,6 +308,15 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             @Block.started += instance.OnBlock;
             @Block.performed += instance.OnBlock;
             @Block.canceled += instance.OnBlock;
+            @Attack.started += instance.OnAttack;
+            @Attack.performed += instance.OnAttack;
+            @Attack.canceled += instance.OnAttack;
+            @SlipStep.started += instance.OnSlipStep;
+            @SlipStep.performed += instance.OnSlipStep;
+            @SlipStep.canceled += instance.OnSlipStep;
+            @EvasiveRoll.started += instance.OnEvasiveRoll;
+            @EvasiveRoll.performed += instance.OnEvasiveRoll;
+            @EvasiveRoll.canceled += instance.OnEvasiveRoll;
         }
 
         private void UnregisterCallbacks(IGameplayActions instance)
@@ -216,6 +327,15 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             @Block.started -= instance.OnBlock;
             @Block.performed -= instance.OnBlock;
             @Block.canceled -= instance.OnBlock;
+            @Attack.started -= instance.OnAttack;
+            @Attack.performed -= instance.OnAttack;
+            @Attack.canceled -= instance.OnAttack;
+            @SlipStep.started -= instance.OnSlipStep;
+            @SlipStep.performed -= instance.OnSlipStep;
+            @SlipStep.canceled -= instance.OnSlipStep;
+            @EvasiveRoll.started -= instance.OnEvasiveRoll;
+            @EvasiveRoll.performed -= instance.OnEvasiveRoll;
+            @EvasiveRoll.canceled -= instance.OnEvasiveRoll;
         }
 
         public void RemoveCallbacks(IGameplayActions instance)
@@ -237,5 +357,8 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
     {
         void OnMove(InputAction.CallbackContext context);
         void OnBlock(InputAction.CallbackContext context);
+        void OnAttack(InputAction.CallbackContext context);
+        void OnSlipStep(InputAction.CallbackContext context);
+        void OnEvasiveRoll(InputAction.CallbackContext context);
     }
 }

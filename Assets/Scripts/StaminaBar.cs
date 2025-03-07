@@ -1,30 +1,38 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
-public class StaminaBar : MonoBehaviour
+public class ComposureBar : MonoBehaviour
 {
-    public float maxStamina = 50f;
-    public float currentStamina;
+    public Slider ComposureSlider;
+    public float maxComposure = 50f;
+    public float currentComposure;
+    public float lerpSpeed = 0.05f;
     public float regenRate = 5f;
 
     private void Start()
     {
-        currentStamina = maxStamina;
+        currentComposure = maxComposure;
+        ComposureSlider.maxValue = maxComposure;
+        ComposureSlider.value = currentComposure;
     }
 
     private void Update()
     {
-        if (currentStamina < maxStamina)
+        // Regenerate stamina over time
+        if (currentComposure < maxComposure)
         {
-            currentStamina += regenRate * Time.deltaTime;
+            currentComposure += regenRate * Time.deltaTime;
+            currentComposure = Mathf.Clamp(currentComposure, 0, maxComposure);
         }
+
+        // Update UI sliders
+        ComposureSlider.value = currentComposure;
     }
 
-    public void ReduceStamina(float amount)
+    public void ReduceComposure(float amount)
     {
-        currentStamina -= amount;
-        currentStamina = Mathf.Max(currentStamina, 0);
+        currentComposure -= amount;
+        currentComposure = Mathf.Clamp(currentComposure, 0, maxComposure);
     }
 }
 

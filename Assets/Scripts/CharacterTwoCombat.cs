@@ -4,11 +4,14 @@ using UnityEngine;
 
 public class CharacterTwoCombat : CombatBase
 {
-    protected override Dictionary<KeyCode, string> AttackMoves => new Dictionary<KeyCode, string>
+    protected override Dictionary<string, string> AttackMoves => new Dictionary<string, string>
     {
-        { KeyCode.L, "Jab" },
-        { KeyCode.K, "Roundhouse" },
-        { KeyCode.M, "Elbow" }
+        { "b", "Jab" },
+        { "m", "FrontKick" },
+        { "n", "Swing" },
+        { "buttonWest", "Jab" },   // Gamepad Y (Xbox) / Triangle (PS)
+        { "buttonSouth", "FrontKick" },   // Gamepad A (Xbox) / Cross (PS)
+        { "buttonNorth", "Swing" }    // Gamepad X (Xbox) / Square (PS)
     };
 }
 
