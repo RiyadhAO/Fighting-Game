@@ -4,24 +4,25 @@ using UnityEngine;
 
 public class Hitbox : MonoBehaviour
 {
-    public float healthDamage = 10f; // Health damage amount
-    public float staminaDamage = 15f; // Stamina drain amount
-    public string attackName;
+    public enum HitboxType { Inside, Outside }  // Defines Inside and Outside attacks
+    public HitboxType hitboxType; // Publicly assignable in Inspector
+
+    public float healthDamage = 10f;  // Damage dealt to health
+    public float composureDamage = 8f;  // Damage dealt to stamina when blocking
+    public string attackName; // Specifies which move this hitbox is for
 
     private Collider hitboxCollider;
     private List<Hurtbox> overlappingHurtboxes = new List<Hurtbox>();
-    private CombatBase ownerCombat;
 
     void Start()
     {
         hitboxCollider = GetComponent<Collider>();
         hitboxCollider.enabled = false;
-        ownerCombat = GetComponentInParent<CombatBase>(); // Get the attacker's script
     }
 
     public void ActivateHitbox()
     {
-        overlappingHurtboxes.Clear();
+        overlappingHurtboxes.Clear(); // Reset previous collisions
         hitboxCollider.enabled = true;
     }
 
@@ -36,10 +37,7 @@ public class Hitbox : MonoBehaviour
         Hurtbox hurtbox = other.GetComponent<Hurtbox>();
         if (hurtbox != null && !overlappingHurtboxes.Contains(hurtbox))
         {
-            if (hurtbox.GetComponentInParent<CombatBase>() != ownerCombat) // Avoid hitting self
-            {
-                overlappingHurtboxes.Add(hurtbox);
-            }
+            overlappingHurtboxes.Add(hurtbox);
         }
     }
 
@@ -56,18 +54,29 @@ public class Hitbox : MonoBehaviour
     {
         if (overlappingHurtboxes.Count == 0) return;
 
-        List<Hurtbox> blockingHurtboxes = overlappingHurtboxes.FindAll(hb => hb.isBlockingHurtbox);
-        List<Hurtbox> normalHurtboxes = overlappingHurtboxes.FindAll(hb => !hb.isBlockingHurtbox);
+        // Sort hurtboxes by priority (lower number = higher priority)
+        overlappingHurtboxes.Sort((a, b) => a.priority.CompareTo(b.priority));
+        Hurtbox targetHurtbox = overlappingHurtboxes[0];
 
-        Hurtbox chosenHurtbox = blockingHurtboxes.Count > 0 ? blockingHurtboxes[0] : normalHurtboxes[0];
+        // Get the PlayerSlipStep component from the hurtbox owner (if applicable)
+        PlayerSlipStep slipStep = targetHurtbox.GetComponentInParent<PlayerSlipStep>();
 
-        if (chosenHurtbox != null)
+        // Determine if attack should be negated due to Slip Step
+        bool isBlocked = targetHurtbox.isBlockingHurtbox;
+        bool isInvincibleToThisAttack = slipStep != null && slipStep.isInvincible && hitboxType == HitboxType.Inside;
+
+        // Only apply damage if the attack is NOT negated by Slip Step
+        if (!isInvincibleToThisAttack)
         {
-            bool isBlocked = blockingHurtboxes.Count > 0;
-            chosenHurtbox.TakeDamage(healthDamage, staminaDamage, isBlocked);
+            targetHurtbox.TakeDamage(healthDamage, composureDamage, isBlocked);
+        }
+        else
+        {
+            Debug.Log($"{attackName} was avoided by Slip Step!");
         }
     }
 }
+
 
 
 

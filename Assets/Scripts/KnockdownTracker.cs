@@ -13,6 +13,7 @@ public class KnockdownTracker : MonoBehaviour
     public TMP_Text gameOverText;
     public Button restartButton;
     public Button mainMenuButton;
+    public Slider KnockdownSlider;
 
     public string playerName;
 
@@ -20,11 +21,14 @@ public class KnockdownTracker : MonoBehaviour
     {
         if (gameOverUI != null)
             gameOverUI.SetActive(false);
+        KnockdownSlider.maxValue = maxKnockdowns;
+        KnockdownSlider.value = knockdownCount;
     }
 
     public void RegisterKnockdown()
     {
         knockdownCount++;
+        KnockdownSlider.value = knockdownCount;
 
         if (knockdownCount >= maxKnockdowns)
         {
@@ -42,14 +46,14 @@ public class KnockdownTracker : MonoBehaviour
             gameOverUI.SetActive(true);
             if (gameOverText != null)
             {
-                gameOverText.text = playerName + " Wins!";
+                gameOverText.text = playerName + " is KO!";
+                Time.timeScale = 0f;
             }
         }
 
         restartButton.interactable = true;
         mainMenuButton.interactable = true;
 
-        // Pause the game
         Time.timeScale = 0f;
     }
 }
