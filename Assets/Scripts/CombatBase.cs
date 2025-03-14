@@ -9,7 +9,7 @@ public abstract class CombatBase : MonoBehaviour
     protected float chargeTime = 1.5f; // Adjust charge time as needed
 
     public Animator animator;
-    protected bool isAttacking = false;
+    public bool isAttacking = false;
 
     // Dictionary of attack names linked to hitboxes
     public Dictionary<string, Hitbox> attackHitboxes = new Dictionary<string, Hitbox>();
@@ -104,6 +104,16 @@ public abstract class CombatBase : MonoBehaviour
 
     protected void StartAttack(string attackName)
     {
+        if (isAttacking) return; // Block new attacks unless taking damage
+
+        AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+
+        if (stateInfo.IsName("TakeDamage"))
+        {
+            Debug.Log("Attack interrupted by damage!");
+            return; // Allow the damage animation to play
+        }
+
         if (!attackHitboxes.ContainsKey(attackName))
         {
             Debug.LogWarning($"No hitbox found for attack: {attackName}");
@@ -114,11 +124,38 @@ public abstract class CombatBase : MonoBehaviour
         isAttacking = true;
         animator.SetTrigger(attackName);
 
-        if (attackName == "Tackle")
-        {
-            StartCoroutine(HandleGrab());
-        }
+        StartCoroutine(AttackDuration(attackName));
     }
+
+    private IEnumerator AttackDuration(string attackName)
+    {
+        yield return null; // Allow animation to start
+
+        while (true)
+        {
+            AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+
+            // If we switch to "TakeDamage", interrupt attack
+            if (stateInfo.IsName("TakeDamage"))
+            {
+                Debug.Log("Attack interrupted by damage!");
+                isAttacking = false;
+                yield break; // Exit the coroutine early
+            }
+
+            // If attack animation finishes, break loop
+            if (stateInfo.IsName(attackName) && stateInfo.normalizedTime >= 1.0f)
+            {
+                break;
+            }
+
+            yield return null; // Wait for the next frame
+        }
+
+        isAttacking = false;
+    }
+
+
 
     private IEnumerator HandleGrab()
     {
@@ -166,6 +203,10 @@ public abstract class CombatBase : MonoBehaviour
         {
             attackHitboxes[attackName].DeactivateHitbox();
         }
+    }
+
+    public void ResetAttackState()
+    {
         isAttacking = false;
     }
 }

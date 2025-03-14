@@ -6,7 +6,7 @@ using TMPro;
 public class KnockdownTracker : MonoBehaviour
 {
     public int maxKnockdowns = 3;
-    private int knockdownCount = 0;
+    public int knockdownCount = 0;
 
     [Header("UI Elements")]
     public GameObject gameOverUI;
