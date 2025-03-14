@@ -7,7 +7,7 @@ public class PlayerEvasiveRoll : MonoBehaviour
     [Header("Evasive Roll Settings")]
     public float rollDistance = 4f;      // How far the roll moves
     public float rollDuration = 0.4f;    // Duration of the roll
-    public float composureCost = 20f;    // Higher composure drain
+    public float composureCost = 10f;    // Higher composure drain
     public bool isInvincible = false;    // Blocks all attacks while rolling
 
     private PlayerInput playerInput;

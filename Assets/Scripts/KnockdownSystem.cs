@@ -12,6 +12,7 @@ public class KnockdownSystem : MonoBehaviour
     public KnockdownTracker knockdownTracker;
 
     private PlayerInput playerInput;
+    public PlayerInput EnemyPlayerInput;
     private Rigidbody rb;
 
     void Start()
@@ -42,6 +43,7 @@ public class KnockdownSystem : MonoBehaviour
 
         // Disable player input during knockdown
         if (playerInput != null)
+            EnemyPlayerInput.enabled = false;
             playerInput.enabled = false;
 
         // Stop movement completely
@@ -74,6 +76,7 @@ public class KnockdownSystem : MonoBehaviour
         // Re-enable input
         if (playerInput != null)
         {
+            EnemyPlayerInput.enabled = true;
             playerInput.enabled = true;
         }
 

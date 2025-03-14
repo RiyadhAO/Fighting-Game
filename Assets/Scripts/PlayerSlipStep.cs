@@ -7,7 +7,7 @@ public class PlayerSlipStep : MonoBehaviour
     [Header("Slip Step Settings")]
     public float slipStepDistance = 3f;       // How far the dash moves
     public float slipStepDuration = 0.15f;    // Duration of the dash
-    public float ComposureCost = 10f;           // Stamina drained per slip step
+    public float ComposureCost = 5f;           // Stamina drained per slip step
     public bool isInvincible = false;         // Tracks invincibility frames
 
     private PlayerInput playerInput;
