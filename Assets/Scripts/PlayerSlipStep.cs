@@ -5,28 +5,28 @@ using UnityEngine.InputSystem;
 public class PlayerSlipStep : MonoBehaviour
 {
     [Header("Slip Step Settings")]
-    public float slipStepDistance = 3f;       // How far the dash moves
-    public float slipStepDuration = 0.15f;    // Duration of the dash
-    public float ComposureCost = 5f;           // Stamina drained per slip step
-    public bool isInvincible = false;         // Tracks invincibility frames
+    public float slipStepDistance = 3f;
+    public float slipStepDuration = 0.15f;
+    public float slipStepCooldown = 0.5f;
+    public float ComposureCost = 5f;
+    public bool isInvincible = false;
 
+    private bool canSlipStep = true;
     private PlayerInput playerInput;
     private InputAction slipStepAction;
     private Rigidbody rb;
     private PlayerMovement playerMovement;
-    public ComposureBar ComposureBar;            // Reference to stamina system
+    private CombatBase combatBase; // Reference to CombatBase
+    public ComposureBar ComposureBar;
+    private Animator animator;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
         playerInput = GetComponent<PlayerInput>();
-        playerMovement = GetComponent<PlayerMovement>();  // Assign playerMovement
-
-        if (playerInput == null)
-        {
-            Debug.LogError("PlayerInput is NULL in PlayerSlipStep!");
-            return;
-        }
+        playerMovement = GetComponent<PlayerMovement>();
+        combatBase = GetComponent<CombatBase>(); // Get CombatBase
+        animator = GetComponent<Animator>();
 
         slipStepAction = playerInput.actions["SlipStep"];
 
@@ -34,15 +34,7 @@ public class PlayerSlipStep : MonoBehaviour
         {
             Debug.LogError("SlipStep action not found in PlayerInput actions!");
         }
-
-        if (playerMovement == null)
-        {
-            Debug.LogError("PlayerMovement is NULL in PlayerSlipStep! Make sure this script is on the same GameObject as PlayerMovement.");
-        }
     }
-
-
-
 
     private void OnEnable()
     {
@@ -51,51 +43,47 @@ public class PlayerSlipStep : MonoBehaviour
 
     private void OnDisable()
     {
-        if (slipStepAction != null)
-        {
-            slipStepAction.performed -= OnSlipStep;
-        }
-        else
-        {
-            Debug.LogWarning("slipStepAction is NULL in OnDisable!");
-        }
+        slipStepAction.performed -= OnSlipStep;
     }
-
 
     private void OnSlipStep(InputAction.CallbackContext context)
     {
-        Debug.Log("SlipStep triggered");
-
-        if (ComposureBar == null)
+        // Prevent Slip Step if currently attacking
+        if (canSlipStep && ComposureBar.currentComposure >= ComposureCost &&
+            !playerMovement.isStaggered &&
+            (combatBase == null || !combatBase.isAttacking)) // Prevent during attack
         {
-            Debug.LogError("staminaBar is NULL!");
-            return;
-        }
-
-        if (playerMovement == null)
-        {
-            Debug.LogError("playerMovement is NULL!");
-            return;
-        }
-
-        if (ComposureBar.currentComposure >= ComposureCost && !playerMovement.isStaggered)
-        {
-            Debug.Log("Starting SlipStep!");
             StartCoroutine(SlipStepCoroutine());
+        }
+        else
+        {
+            Debug.Log("Cannot Slip Step while attacking!");
         }
     }
 
-
     private IEnumerator SlipStepCoroutine()
     {
-        isInvincible = true;  // Start invincibility
-        playerMovement.enabled = false; // Disable normal movement
+        canSlipStep = false;
+        isInvincible = true;
+        playerMovement.enabled = false;
+        ComposureBar.ReduceComposure(ComposureCost);
 
-        ComposureBar.ReduceComposure(ComposureCost); // Drain stamina
+        if (combatBase != null)
+        {
+            combatBase.isDefending = true; // Prevent attacks during Slip Step
+        }
 
         Vector3 slipDirection = new Vector3(playerMovement.moveInput.x, 0, playerMovement.moveInput.y).normalized;
         Vector3 startPosition = transform.position;
         Vector3 targetPosition = startPosition + slipDirection * slipStepDistance;
+
+        animator.SetTrigger("SlipStep");
+
+        RaycastHit hit;
+        if (Physics.Raycast(startPosition, slipDirection, out hit, slipStepDistance))
+        {
+            targetPosition = hit.point;
+        }
 
         float elapsedTime = 0f;
         while (elapsedTime < slipStepDuration)
@@ -105,9 +93,20 @@ public class PlayerSlipStep : MonoBehaviour
             yield return null;
         }
 
-        rb.MovePosition(targetPosition); // Ensure final position is exact
-        isInvincible = false; // End invincibility
-        playerMovement.enabled = true; // Re-enable movement
+        rb.MovePosition(targetPosition);
+        rb.velocity = Vector3.zero;
+
+        isInvincible = false;
+        playerMovement.enabled = true;
+        animator.ResetTrigger("SlipStep");
+
+        if (combatBase != null)
+        {
+            combatBase.isDefending = false; // Allow attacks again after Slip Step
+        }
+
+        yield return new WaitForSeconds(slipStepCooldown);
+        canSlipStep = true;
     }
 }
 

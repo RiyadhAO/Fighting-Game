@@ -4,15 +4,22 @@ using UnityEngine;
 
 public class Hitbox : MonoBehaviour
 {
-    public enum HitboxType { Inside, Outside }  // Defines Inside and Outside attacks
+    public enum HitboxType { Inside, Outside, Grab }
     public HitboxType hitboxType; // Publicly assignable in Inspector
 
-    public float healthDamage = 10f;  // Damage dealt to health
-    public float composureDamage = 8f;  // Damage dealt to stamina when blocking
-    public string attackName; // Specifies which move this hitbox is for
+    public string attackName; // Name of the specific attack
+    public float healthDamage = 10f;
+    public float composureDamage = 8f;
+    public string hitType;
+
+    [Header("Grab Settings")]
+    public MonoBehaviour attackerInput; // Assign the PlayerInput component for the attacker
+    public MonoBehaviour targetInput;  // Assign the PlayerInput component for the target
 
     private Collider hitboxCollider;
     private List<Hurtbox> overlappingHurtboxes = new List<Hurtbox>();
+
+    private bool isGrabActive = false; // Track if a grab is currently active
 
     void Start()
     {
@@ -29,7 +36,10 @@ public class Hitbox : MonoBehaviour
     public void DeactivateHitbox()
     {
         hitboxCollider.enabled = false;
-        DealDamageToHighestPriorityHurtbox();
+        if (!isGrabActive) // Only deal damage if no grab is active
+        {
+            DealDamageToHighestPriorityHurtbox();
+        }
     }
 
     private void OnTriggerEnter(Collider other)
@@ -38,6 +48,12 @@ public class Hitbox : MonoBehaviour
         if (hurtbox != null && !overlappingHurtboxes.Contains(hurtbox))
         {
             overlappingHurtboxes.Add(hurtbox);
+
+            // **If this is a grab attack, execute the grab sequence**
+            if (hitboxType == HitboxType.Grab && !isGrabActive)
+            {
+                StartCoroutine(ExecuteGrab(hurtbox.gameObject));
+            }
         }
     }
 
@@ -52,31 +68,104 @@ public class Hitbox : MonoBehaviour
 
     private void DealDamageToHighestPriorityHurtbox()
     {
-        if (overlappingHurtboxes.Count == 0) return;
+        if (overlappingHurtboxes.Count == 0 || hitboxType == HitboxType.Grab) return;
 
-        // Sort hurtboxes by priority (lower number = higher priority)
         overlappingHurtboxes.Sort((a, b) => a.priority.CompareTo(b.priority));
         Hurtbox targetHurtbox = overlappingHurtboxes[0];
 
-        // Get the PlayerSlipStep component from the hurtbox owner (if applicable)
         PlayerSlipStep slipStep = targetHurtbox.GetComponentInParent<PlayerSlipStep>();
 
-        // Determine if attack should be negated due to Slip Step
         bool isBlocked = targetHurtbox.isBlockingHurtbox;
         bool isInvincibleToThisAttack = slipStep != null && slipStep.isInvincible && hitboxType == HitboxType.Inside;
 
-        // Only apply damage if the attack is NOT negated by Slip Step
         if (!isInvincibleToThisAttack)
         {
-            targetHurtbox.TakeDamage(healthDamage, composureDamage, isBlocked);
+            targetHurtbox.TakeDamage(healthDamage, composureDamage, isBlocked, hitType);
+            Debug.Log($"{attackName} hit {targetHurtbox.gameObject.name}!");
         }
         else
         {
             Debug.Log($"{attackName} was avoided by Slip Step!");
         }
     }
+
+    private IEnumerator ExecuteGrab(GameObject target)
+    {
+        isGrabActive = true; // Mark grab as active
+
+        Hurtbox hurtbox = target.GetComponent<Hurtbox>();
+        if (hurtbox == null || hurtbox.isInGrab)
+        {
+            Debug.Log("Grab attempt failed: No valid target.");
+            ResetAttacker();  // Ensure attacker can move and attack again
+            isGrabActive = false; // Mark grab as inactive
+            yield break;
+        }
+
+        hurtbox.isInGrab = true;
+
+        Debug.Log($"{target.name} was grabbed by {gameObject.name} using {attackName}!");
+
+        // Get attacker and target components
+        Rigidbody attackerRb = GetComponentInParent<Rigidbody>();
+        Rigidbody targetRb = target.GetComponentInParent<Rigidbody>();
+
+        // **Disable both players' input actions**
+        if (attackerInput != null) attackerInput.enabled = false;
+        if (targetInput != null) targetInput.enabled = false;
+
+        // **Freeze both players' rigid bodies**
+        if (attackerRb != null)
+        {
+            attackerRb.isKinematic = true; // Freeze the rigidbody
+        }
+        if (targetRb != null)
+        {
+            targetRb.isKinematic = true; // Freeze the rigidbody
+        }
+
+        // Play grab animations
+        Animator attackerAnimator = GetComponentInParent<Animator>();
+        Animator targetAnimator = target.GetComponentInParent<Animator>();
+
+        if (attackerAnimator != null) attackerAnimator.SetTrigger("Grab");
+        if (targetAnimator != null) targetAnimator.SetTrigger("Grabbed");
+
+        yield return new WaitForSeconds(1.5f); // Wait for grab animation to complete
+
+        // Apply damage only if the grab connected
+        if (hurtbox != null)
+        {
+            hurtbox.healthBar.TakeDamage(40);
+            Debug.Log($"{target.name} took grab damage from {attackName}!");
+        }
+
+        // **Re-enable both players' input actions and unfreeze rigid bodies**
+        ResetAttacker();
+        if (targetInput != null) targetInput.enabled = true;
+        if (targetRb != null) targetRb.isKinematic = false;
+
+        if (attackerInput != null)
+        {
+            attackerInput.enabled = true;
+        }
+        if (attackerRb != null)
+        {
+            attackerRb.isKinematic = false;
+        }
+
+        hurtbox.isInGrab = false;
+        isGrabActive = false; // Mark grab as inactive
+    }
+
+    // **New Function**: Ensures the attacker regains control after grab sequence
+    private void ResetAttacker()
+    {
+        if (attackerInput != null) attackerInput.enabled = true;
+
+        Rigidbody attackerRb = GetComponentInParent<Rigidbody>();
+        if (attackerRb != null) attackerRb.isKinematic = false;
+
+        Debug.Log("Attacker can move and attack again!");
+    }
 }
-
-
-
-

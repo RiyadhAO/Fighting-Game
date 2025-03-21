@@ -6,14 +6,14 @@ using UnityEngine.InputSystem;
 public abstract class CombatBase : MonoBehaviour
 {
     protected bool isCharging = false;
-    protected float chargeTime = 1.5f; // Adjust charge time as needed
-
+    protected float chargeTime = 0.01f;
     public Animator animator;
     public bool isAttacking = false;
 
-    // Dictionary of attack names linked to hitboxes
-    public Dictionary<string, Hitbox> attackHitboxes = new Dictionary<string, Hitbox>();
+    // New: Add isDefending to prevent attacking while dodging or blocking
+    public bool isDefending = false;
 
+    public Dictionary<string, Hitbox> attackHitboxes = new Dictionary<string, Hitbox>();
     protected abstract Dictionary<string, string> AttackMoves { get; }
     protected PlayerInput playerInput;
     private InputAction attackAction;
@@ -33,7 +33,6 @@ public abstract class CombatBase : MonoBehaviour
             Debug.Log($"Registered hitbox: {hitbox.attackName}");
         }
     }
-
 
     protected virtual void Awake()
     {
@@ -65,53 +64,32 @@ public abstract class CombatBase : MonoBehaviour
 
     private void OnAttackPerformed(InputAction.CallbackContext context)
     {
-        string inputActionName = context.control.name;
+        if (isDefending)
+        {
+            Debug.Log("Cannot attack while defending!");
+            return; // Prevent attacking if in a defensive state
+        }
 
+        string inputActionName = context.control.name;
         Debug.Log($"Attack Input Received: {inputActionName}");
 
         if (AttackMoves.ContainsKey(inputActionName) && !isAttacking)
         {
             string attackName = AttackMoves[inputActionName];
-
-            if (attackName == "Tackle")
-            {
-                StartCoroutine(ChargeAndTackle(attackName));
-            }
-            else
-            {
-                StartAttack(attackName);
-            }
+            StartAttack(attackName);
         }
     }
 
-    private IEnumerator ChargeAndTackle(string attackName)
-    {
-        isCharging = true;
-        Debug.Log("Charging tackle...");
-
-        // Play charge-up animation
-        animator.SetTrigger("Charge");
-
-        yield return new WaitForSeconds(chargeTime); // Wait for the charge duration
-
-        isCharging = false;
-
-        // Transition from charge to tackle
-        animator.SetTrigger(attackName);
-        StartCoroutine(HandleGrab());
-    }
-
-
     protected void StartAttack(string attackName)
     {
-        if (isAttacking) return; // Block new attacks unless taking damage
+        if (isAttacking) return;
 
         AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
 
         if (stateInfo.IsName("TakeDamage"))
         {
             Debug.Log("Attack interrupted by damage!");
-            return; // Allow the damage animation to play
+            return;
         }
 
         if (!attackHitboxes.ContainsKey(attackName))
@@ -129,71 +107,36 @@ public abstract class CombatBase : MonoBehaviour
 
     private IEnumerator AttackDuration(string attackName)
     {
-        yield return null; // Allow animation to start
+        yield return null;
 
         while (true)
         {
             AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
 
-            // If we switch to "TakeDamage", interrupt attack
             if (stateInfo.IsName("TakeDamage"))
             {
                 Debug.Log("Attack interrupted by damage!");
                 isAttacking = false;
-                yield break; // Exit the coroutine early
+                yield break;
             }
 
-            // If attack animation finishes, break loop
             if (stateInfo.IsName(attackName) && stateInfo.normalizedTime >= 1.0f)
             {
                 break;
             }
 
-            yield return null; // Wait for the next frame
+            yield return null;
         }
 
         isAttacking = false;
     }
-
-
-
-    private IEnumerator HandleGrab()
-    {
-        yield return new WaitForSeconds(0.5f); // Simulate grab timing
-
-        GameObject enemy = DetectEnemy();
-        if (enemy != null)
-        {
-            Debug.Log("Enemy grabbed! Initiating joint animation...");
-            animator.SetTrigger("Grab");
-            enemy.GetComponent<Animator>().SetTrigger("Grabbed");
-        }
-
-        yield return new WaitForSeconds(1.5f); // Duration of grab animation
-
-        isAttacking = false;
-    }
-
-    private GameObject DetectEnemy()
-    {
-        Collider[] hitColliders = Physics.OverlapSphere(transform.position, 2f);
-        foreach (Collider col in hitColliders)
-        {
-            if (col.CompareTag("Enemy"))
-            {
-                return col.gameObject;
-            }
-        }
-        return null;
-    }
-
 
     public void ActivateHitbox(string attackName)
     {
         if (attackHitboxes.ContainsKey(attackName))
         {
             attackHitboxes[attackName].ActivateHitbox();
-            Debug.Log("hitbox activated");
+            Debug.Log("Hitbox activated");
         }
     }
 

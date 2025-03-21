@@ -5,102 +5,126 @@ using UnityEngine.InputSystem;
 public class PlayerEvasiveRoll : MonoBehaviour
 {
     [Header("Evasive Roll Settings")]
-    public float rollDistance = 4f;      // How far the roll moves
-    public float rollDuration = 0.4f;    // Duration of the roll
-    public float composureCost = 10f;    // Higher composure drain
-    public bool isInvincible = false;    // Blocks all attacks while rolling
+    public float rollForce = 10f;          // How strong the roll is
+    public float rollDuration = 0.5f;      // How long the roll lasts
+    public float rollCooldown = 1f;        // Cooldown before rolling again
+    public float composureCost = 10f;      // Energy cost for rolling
+    public bool isInvincible = false;      // Temporarily immune during roll
+    public LayerMask collisionLayers;      // Layers the player can collide with
 
     private PlayerInput playerInput;
     private InputAction rollAction;
     private Rigidbody rb;
     private PlayerMovement playerMovement;
+    private CombatBase combatBase; // Reference to CombatBase to check for attacks
     public ComposureBar ComposureBar;
     private Animator animator;
+
+    private Vector3 rollDirection;
+    public bool isRolling = false;
+    private bool canRoll = true;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
         playerInput = GetComponent<PlayerInput>();
-        playerMovement = GetComponent<PlayerMovement>();  // Ensure this is assigned
+        playerMovement = GetComponent<PlayerMovement>();
+        combatBase = GetComponent<CombatBase>(); // Get CombatBase reference
         animator = GetComponent<Animator>();
 
         if (playerMovement == null)
-        {
-            Debug.LogError("PlayerMovement is NULL in PlayerEvasiveRoll! Make sure this script is on the same GameObject as PlayerMovement.");
-        }
+            Debug.LogError("PlayerMovement is NULL in PlayerEvasiveRoll!");
 
         if (animator == null)
-        {
-            Debug.LogError("Animator is NULL in PlayerEvasiveRoll! Make sure an Animator is attached to the GameObject.");
-        }
+            Debug.LogError("Animator is NULL in PlayerEvasiveRoll!");
 
-        rollAction = playerInput.actions["EvasiveRoll"]; // FIXED: Using correct variable name
+        rollAction = playerInput.actions["EvasiveRoll"];
 
         if (rollAction == null)
-        {
             Debug.LogError("EvasiveRoll action not found in PlayerInput actions!");
-        }
     }
 
     private void OnEnable()
     {
-        rollAction.performed += OnEvasiveRoll; // FIXED: Now correctly using rollAction
+        rollAction.performed += OnEvasiveRoll;
     }
 
     private void OnDisable()
     {
         if (rollAction != null)
-        {
             rollAction.performed -= OnEvasiveRoll;
-        }
     }
 
     private void OnEvasiveRoll(InputAction.CallbackContext context)
     {
-        Debug.Log("Evasive Roll triggered");
+        if (ComposureBar == null || playerMovement == null || isRolling || !canRoll) return;
 
-        if (ComposureBar == null)
+        // Prevent rolling if attacking
+        if (combatBase != null && combatBase.isAttacking)
         {
-            Debug.LogError("ComposureBar is NULL!");
-            return;
-        }
-
-        if (playerMovement == null)
-        {
-            Debug.LogError("playerMovement is NULL!");
+            Debug.Log("Cannot roll while attacking!");
             return;
         }
 
         if (ComposureBar.currentComposure >= composureCost && !playerMovement.isStaggered)
         {
-            Debug.Log("Starting Evasive Roll!");
+            rollDirection = new Vector3(playerMovement.moveInput.x, 0, playerMovement.moveInput.y).normalized;
+
+            if (rollDirection == Vector3.zero) return; // Prevent rolling in place
+
             StartCoroutine(EvasiveRollCoroutine());
         }
     }
 
     private IEnumerator EvasiveRollCoroutine()
     {
-        isInvincible = true;  // Enable full invincibility
-        playerMovement.enabled = false; // Disable normal movement
-        ComposureBar.ReduceComposure(composureCost); // Drain composure
+        isRolling = true;
+        isInvincible = true;
+        canRoll = false; // Prevent rolling again immediately
+        ComposureBar.ReduceComposure(composureCost);
 
-        animator.SetTrigger("Roll"); // Play the roll animation
+        if (combatBase != null)
+        {
+            combatBase.isDefending = true; // Prevent attacks during roll
+        }
 
-        Vector3 rollDirection = new Vector3(playerMovement.moveInput.x, 0, playerMovement.moveInput.y).normalized;
-        Vector3 startPosition = transform.position;
-        Vector3 targetPosition = startPosition + rollDirection * rollDistance;
+        rb.useGravity = false;
+        rb.velocity = Vector3.zero;
+
+        // Play roll animation
+        animator.SetFloat("RollX", rollDirection.x);
+        animator.SetFloat("RollZ", rollDirection.z);
+        animator.SetTrigger("Roll");
 
         float elapsedTime = 0f;
+
         while (elapsedTime < rollDuration)
         {
-            rb.MovePosition(Vector3.Lerp(startPosition, targetPosition, elapsedTime / rollDuration));
+            // **Collision Check Before Moving**
+            if (rb.SweepTest(rollDirection, out RaycastHit hit, rollForce * Time.deltaTime))
+            {
+                Debug.Log("Roll blocked by: " + hit.collider.name);
+                break; // Stop movement if a wall is detected
+            }
+
+            // Apply force-based movement
+            rb.AddForce(rollDirection * rollForce, ForceMode.VelocityChange);
+
             elapsedTime += Time.deltaTime;
             yield return null;
         }
 
-        rb.MovePosition(targetPosition); // Ensure final position is exact
-        isInvincible = false; // End invincibility
-        playerMovement.enabled = true; // Re-enable movement
+        rb.useGravity = true;
+        isInvincible = false;
+        isRolling = false;
+
+        if (combatBase != null)
+        {
+            combatBase.isDefending = false; // Allow attacking again after roll
+        }
+
+        // Cooldown before rolling again
+        yield return new WaitForSeconds(rollCooldown);
+        canRoll = true;
     }
 }
-

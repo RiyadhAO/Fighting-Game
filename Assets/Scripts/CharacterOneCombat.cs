@@ -9,7 +9,7 @@ public class CharacterOneCombat : CombatBase
         { "j", "Jab" },
         { "k", "Cross" },
         { "l", "LowKick" },
-        { "p", "Tackle" } // New Tackle Attack
+        { "h", "Tackle" } // New Tackle Attack
     };
 }
 
