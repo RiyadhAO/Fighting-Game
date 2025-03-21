@@ -15,7 +15,13 @@ public class Hurtbox : MonoBehaviour
     public ComposureBar EnemyComposure;
     public TMP_Text parryText;
 
+    public bool isInGrab = false; // Prevents multiple grabs
     private bool isTakingDamage = false; // Prevents interruption
+
+    public AudioSource audioSource; // Audio source for playing sounds
+    public AudioClip lightHitSound;
+    public AudioClip heavyHitSound;
+    public AudioClip blockSound;
 
     private void Start()
     {
@@ -29,9 +35,9 @@ public class Hurtbox : MonoBehaviour
         }
     }
 
-    public void TakeDamage(float healthDamage, float composureDamage, bool isBlocked)
+    public void TakeDamage(float healthDamage, float composureDamage, bool isBlocked, string hitType)
     {
-        if (isTakingDamage) return; // Prevent further damage animation during stun
+        if (isTakingDamage || isInGrab) return; // Prevents damage during grabs or stun
 
         if (isBlocked)
         {
@@ -44,29 +50,32 @@ public class Hurtbox : MonoBehaviour
             if (composureBar.currentComposure >= composureDamage)
             {
                 composureBar.ReduceComposure(composureDamage);
+                PlaySound(blockSound);
                 Debug.Log($"{gameObject.name} blocked! Stamina reduced to {composureBar.currentComposure}");
             }
             else
             {
                 Debug.Log($"{gameObject.name} ran out of stamina! Taking health damage.");
-                healthBar.TakeDamage(healthDamage);
+                composureBar.currentComposure = 0;
+                PlayHitSound(hitType);
+                playerMovement.BreakGuard();
                 StartCoroutine(PlayDamageAnimation());
             }
         }
         else
         {
             healthBar.TakeDamage(healthDamage);
+            PlayHitSound(hitType);
             Debug.Log($"{gameObject.name} took damage! Health reduced to {healthBar.health}");
             StartCoroutine(PlayDamageAnimation());
         }
     }
 
-    public GameObject hitEffectPrefab; // Assign in the Inspector
-    public Transform hitEffectSpawnPoint; // Assign where the effect should appear
+    public GameObject hitEffectPrefab;
+    public Transform hitEffectSpawnPoint;
 
     private IEnumerator PlayDamageAnimation()
     {
-        // Prevent damage animation if knockdown is happening
         if (healthBar.health <= 0) yield break;
 
         isTakingDamage = true;
@@ -74,62 +83,52 @@ public class Hurtbox : MonoBehaviour
         if (hitEffectPrefab != null && hitEffectSpawnPoint != null)
         {
             GameObject effect = Instantiate(hitEffectPrefab, hitEffectSpawnPoint.position, Quaternion.identity);
-            effect.transform.localScale = Vector3.one * 3f; // Adjust the multiplier for size
+            effect.transform.localScale = Vector3.one * 3f;
             Destroy(effect, 1.5f);
         }
 
-        // Stop movement and attacks
         if (playerMovement != null) playerMovement.enabled = false;
         if (combatScript != null) combatScript.isAttacking = true;
 
         animator.SetTrigger("TakeDamage");
 
-        // Wait for the Animator to actually change to the "TakeDamage" animation
-        yield return new WaitForSeconds(0.05f); // Small delay to allow transition
+        yield return new WaitForSeconds(0.05f);
 
-        float animationDuration = 0.1f; // Default fallback
-
-        while (animator.GetCurrentAnimatorStateInfo(0).IsTag("Damage"))
+        float animationDuration = 0.1f;
+        AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+        if (stateInfo.IsTag("Damage"))
         {
-            animationDuration = animator.GetCurrentAnimatorStateInfo(0).length;
-            yield return null;
+            animationDuration = stateInfo.length;
         }
 
         Debug.Log($"Playing Damage Animation, Duration: {animationDuration}");
-
         yield return new WaitForSeconds(animationDuration);
 
-        // Restore movement
         isTakingDamage = false;
         if (playerMovement != null) playerMovement.enabled = true;
         if (combatScript != null) combatScript.isAttacking = false;
-
-        Debug.Log("Player can move again!");
     }
 
-    public GameObject parryEffectPrefab; // Assign in the Inspector
-    public Transform parryEffectSpawnPoint; // Assign where the effect should appear
+    public GameObject parryEffectPrefab;
+    public Transform parryEffectSpawnPoint;
 
     private void PerformParry()
     {
         Debug.Log($"{gameObject.name} successfully parried!");
         EnemyComposure.ReduceComposure(30);
 
-        // Show visual effect
         if (parryEffectPrefab != null && parryEffectSpawnPoint != null)
         {
             GameObject effect = Instantiate(parryEffectPrefab, parryEffectSpawnPoint.position, Quaternion.identity);
-            effect.transform.localScale = Vector3.one * 10f; // Adjust the multiplier for size
+            effect.transform.localScale = Vector3.one * 10f;
             Destroy(effect, 1.5f);
         }
-
 
         if (parryText != null)
         {
             StartCoroutine(ShowParryText());
         }
     }
-
 
     private IEnumerator ShowParryText()
     {
@@ -143,6 +142,31 @@ public class Hurtbox : MonoBehaviour
         yield return new WaitForSeconds(1f);
         parryText.gameObject.SetActive(false);
     }
+
+    private void PlayHitSound(string hitType)
+    {
+        switch (hitType)
+        {
+            case "light":
+                PlaySound(lightHitSound);
+                break;
+            case "heavy":
+                PlaySound(heavyHitSound);
+                break;
+            default:
+                Debug.LogWarning("Unknown hitbox type! No sound played.");
+                break;
+        }
+    }
+
+    private void PlaySound(AudioClip clip)
+    {
+        if (audioSource != null && clip != null)
+        {
+            audioSource.PlayOneShot(clip);
+        }
+    }
 }
+
 
 

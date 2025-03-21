@@ -9,9 +9,11 @@ public class CharacterTwoCombat : CombatBase
         { "b", "Jab" },
         { "m", "FrontKick" },
         { "n", "Swing" },
+        { "v", "Tackle" },
         { "buttonWest", "Jab" },   // Gamepad Y (Xbox) / Triangle (PS)
         { "buttonSouth", "FrontKick" },   // Gamepad A (Xbox) / Cross (PS)
-        { "buttonNorth", "Swing" }    // Gamepad X (Xbox) / Square (PS)
+        { "buttonNorth", "Swing" },    // Gamepad X (Xbox) / Square (PS)
+        { "buttonEast", "Tackle"}
     };
 }
 

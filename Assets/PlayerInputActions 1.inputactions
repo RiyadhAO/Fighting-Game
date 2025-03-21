@@ -208,6 +208,28 @@
                 },
                 {
                     "name": "",
+                    "id": "4098af0c-3159-4a66-b486-1091501916aa",
+                    "path": "<Keyboard>/v",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Attack",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "ae142ee6-b6f0-4e25-848b-1e403000ea8a",
+                    "path": "<Gamepad>/buttonEast",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Attack",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "9e82d292-aa08-4b7b-ab2f-0b41af231fab",
                     "path": "<Gamepad>/rightShoulder",
                     "interactions": "",

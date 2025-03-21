@@ -30,15 +30,21 @@ public class PlayerMovement : MonoBehaviour
     public bool isParryWindowActive = false;
     public float parryWindowDuration = 0.3f;  // Time frame for a parry
 
+    private CombatBase combatBase;
+    private PlayerEvasiveRoll evasiveRoll;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
         playerInput = GetComponent<PlayerInput>();
-        animator = GetComponent<Animator>();  // Reference to the Animator component
-        attackAction = playerInput.actions["Attack"];  // Replace "Attack" with the actual action name
+        animator = GetComponent<Animator>();
+
+        combatBase = GetComponent<CombatBase>(); // Reference to CombatBase for attack checks
+        evasiveRoll = GetComponent<PlayerEvasiveRoll>(); // Reference to Evasive Roll script
+
+        attackAction = playerInput.actions["Attack"];
         rollAction = playerInput.actions["EvasiveRoll"];
         slipStepAction = playerInput.actions["SlipStep"];
-
 
         // If composureBar is not assigned, log an error
         if (composureBar == null)
@@ -87,6 +93,13 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
+        // Prevent blocking if currently attacking, rolling, or slip stepping
+        if ((combatBase != null && combatBase.isAttacking) || (evasiveRoll != null && evasiveRoll.isRolling))
+        {
+            Debug.Log("Cannot block while attacking or rolling!");
+            return;
+        }
+
         isBlocking = true;
         SetHurtboxState(normalHurtboxes, false);
         SetHurtboxState(blockingHurtboxes, true);
@@ -94,7 +107,7 @@ public class PlayerMovement : MonoBehaviour
         // **Play blocking animation**
         animator.SetBool("IsBlocking", true);
 
-        // **Disable attack and evade actions**
+        // **Disable attack, evade, and slip step actions**
         attackAction.Disable();
         rollAction.Disable();
         slipStepAction.Disable();
@@ -105,8 +118,7 @@ public class PlayerMovement : MonoBehaviour
         Debug.Log("Player is blocking, attack and evade disabled.");
     }
 
-
-    private void OnBlockEnd(InputAction.CallbackContext context)
+    public void OnBlockEnd(InputAction.CallbackContext context)
     {
         if (isStaggered)
         {
@@ -121,14 +133,13 @@ public class PlayerMovement : MonoBehaviour
         // **Stop blocking animation**
         animator.SetBool("IsBlocking", false);
 
-        // **Re-enable attack and evade actions**
+        // **Re-enable attack, evade, and slip step actions**
         attackAction.Enable();
         rollAction.Enable();
         slipStepAction.Enable();
 
         Debug.Log("Player stopped blocking, attack and evade re-enabled.");
     }
-
 
     private void SetHurtboxState(Hurtbox[] hurtboxes, bool state)
     {
@@ -138,37 +149,55 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    public void BreakGuard()
+    {
+        OnBlockEnd(new InputAction.CallbackContext());
+    }
+
     private void Update()
     {
-        // Check stagger state every frame (Update is called more frequently than FixedUpdate)
+        // Check stagger state every frame
         CheckStaggerState();
+
+        // Force block to stop if composure reaches zero
+        if (isBlocking && composureBar.currentComposure <= 2)
+        {
+            Debug.Log("Composure depleted! Forcing block to end.");
+            OnBlockEnd(new InputAction.CallbackContext());
+        }
     }
 
     private void FixedUpdate()
     {
-        if (enemy == null || isStaggered) return;
+        if (enemy == null) return;
 
-        float currentSpeed = isBlocking ? speed * blockSpeedMultiplier : speed;
-        Vector3 movement = new Vector3(moveInput.x, 0, moveInput.y) * currentSpeed * Time.fixedDeltaTime;
-        rb.MovePosition(rb.position + movement);
-
+        // Maintain rotation towards the enemy
         Vector3 direction = enemy.position - transform.position;
-        direction.y = 0;
+        direction.y = 0; // Keep the rotation horizontal (no tilting up/down)
 
         if (direction != Vector3.zero)
         {
+            float rotationSpeed = 20f; // Adjust for faster/slower turning
             Quaternion targetRotation = Quaternion.LookRotation(direction) * Quaternion.Euler(0, -90, 0);
-            rb.MoveRotation(targetRotation);
+            rb.MoveRotation(Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime));
+        }
+
+        // Only move if not staggered
+        if (!isStaggered)
+        {
+            float currentSpeed = isBlocking ? speed * blockSpeedMultiplier : speed;
+            Vector3 movement = new Vector3(moveInput.x, 0, moveInput.y) * currentSpeed * Time.fixedDeltaTime;
+            rb.MovePosition(rb.position + movement);
         }
     }
 
+
     private void CheckStaggerState()
     {
-        if (composureBar == null) return; // Prevent null reference error
+        if (composureBar == null) return;
 
-        if (!isStaggered && composureBar.currentComposure <= 0)
+        if (!isStaggered && composureBar.currentComposure <= 2)
         {
-            // If composure reaches 0, trigger stagger effect
             StartCoroutine(StaggerEffect());
             Debug.LogWarning("Player staggered!");
         }
@@ -185,13 +214,10 @@ public class PlayerMovement : MonoBehaviour
         Debug.Log("Parry window closed.");
     }
 
-
     private IEnumerator StaggerEffect()
     {
-        // Trigger stagger animation
         animator.SetTrigger("Stagger");
 
-        // Disable movement, blocking, and attacking
         isStaggered = true;
         isBlocking = false;
 
@@ -200,20 +226,19 @@ public class PlayerMovement : MonoBehaviour
 
         Debug.Log("Player is staggered!");
 
-        // Disable player movement during stagger
-        moveInput = Vector2.zero; // Disable movement input
+        playerInput.enabled = false;
 
-        // Wait until composure is fully regenerated (i.e., 100%)
         while (composureBar.currentComposure < composureBar.maxComposure)
         {
-            yield return null; // Keep waiting while composure is regenerating
+            composureBar.regenRate = 30;
+            yield return null;
         }
 
-        // Player has fully recovered from stagger when composure reaches 100%
+        composureBar.regenRate = 3;
         isStaggered = false;
         Debug.Log("Player recovered from stagger.");
 
-        // Optionally, resume movement once stagger is over
-        moveInput = Vector2.zero; // Player remains still until stagger ends
+        playerInput.enabled = true;
     }
 }
+

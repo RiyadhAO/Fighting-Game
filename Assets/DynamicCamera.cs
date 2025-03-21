@@ -43,9 +43,6 @@ public class DynamicCamera : MonoBehaviour
         // Smoothly adjust the camera FOV
         virtualCamera.m_Lens.FieldOfView = Mathf.Lerp(virtualCamera.m_Lens.FieldOfView, targetFOV, zoomSpeed * Time.deltaTime);
 
-        // Debug FOV changes
-        Debug.Log($"Player Distance: {playerDistance}, Target FOV: {targetFOV}");
-
         // Lock X rotation to 45° while keeping Y/Z the same
         transform.rotation = Quaternion.Euler(lockedXRotation, transform.rotation.eulerAngles.y, 0f);
     }

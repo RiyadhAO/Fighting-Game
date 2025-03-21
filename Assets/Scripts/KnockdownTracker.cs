@@ -1,4 +1,3 @@
-using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -13,7 +12,10 @@ public class KnockdownTracker : MonoBehaviour
     public TMP_Text gameOverText;
     public Button restartButton;
     public Button mainMenuButton;
-    public Slider KnockdownSlider;
+
+    public Image[] knockdownIcons; // Assign in Inspector
+    public Sprite activeKnockdownSprite;  // Default icon
+    public Sprite inactiveKnockdownSprite; // Icon for lost knockdowns
 
     public string playerName;
 
@@ -21,14 +23,17 @@ public class KnockdownTracker : MonoBehaviour
     {
         if (gameOverUI != null)
             gameOverUI.SetActive(false);
-        KnockdownSlider.maxValue = maxKnockdowns;
-        KnockdownSlider.value = knockdownCount;
+
+        UpdateKnockdownUI();
     }
 
     public void RegisterKnockdown()
     {
-        knockdownCount++;
-        KnockdownSlider.value = knockdownCount;
+        if (knockdownCount < maxKnockdowns)
+        {
+            knockdownCount++;
+            UpdateKnockdownUI();
+        }
 
         if (knockdownCount >= maxKnockdowns)
         {
@@ -36,11 +41,25 @@ public class KnockdownTracker : MonoBehaviour
         }
     }
 
+    private void UpdateKnockdownUI()
+    {
+        for (int i = 0; i < knockdownIcons.Length; i++)
+        {
+            if (i < knockdownCount)
+            {
+                knockdownIcons[i].sprite = inactiveKnockdownSprite; // Gray out or remove
+            }
+            else
+            {
+                knockdownIcons[i].sprite = activeKnockdownSprite; // Show remaining knockdowns
+            }
+        }
+    }
+
     private void EndGame()
     {
         Debug.Log(playerName + " has been knocked down 3 times! Game Over!");
 
-        // Show the end game UI
         if (gameOverUI != null)
         {
             gameOverUI.SetActive(true);
