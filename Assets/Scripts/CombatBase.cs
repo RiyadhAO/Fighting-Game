@@ -18,6 +18,8 @@ public abstract class CombatBase : MonoBehaviour
     protected PlayerInput playerInput;
     private InputAction attackAction;
 
+    private UseAdrenaline useAdrenaline;
+
     protected virtual void Start()
     {
         Hitbox[] hitboxComponents = GetComponentsInChildren<Hitbox>();
@@ -47,6 +49,12 @@ public abstract class CombatBase : MonoBehaviour
         if (attackAction == null)
         {
             Debug.LogError("Attack action not found in Input Actions Asset");
+        }
+
+        useAdrenaline = GetComponent<UseAdrenaline>(); // Add this line
+        if (useAdrenaline == null)
+        {
+            Debug.LogError("UseAdrenaline component missing on " + gameObject.name);
         }
     }
 
@@ -111,9 +119,9 @@ public abstract class CombatBase : MonoBehaviour
 
         while (true)
         {
-            AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+            AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0); // Refresh state info
 
-            if (stateInfo.IsName("TakeDamage"))
+            if (stateInfo.IsName("TakeDamage") && (useAdrenaline == null || !useAdrenaline.isAdrenalineActive))
             {
                 Debug.Log("Attack interrupted by damage!");
                 isAttacking = false;
@@ -130,6 +138,7 @@ public abstract class CombatBase : MonoBehaviour
 
         isAttacking = false;
     }
+
 
     public void ActivateHitbox(string attackName)
     {

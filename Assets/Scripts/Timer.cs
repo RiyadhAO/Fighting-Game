@@ -4,92 +4,189 @@ using UnityEngine.UI;
 
 public class StopwatchCountdown : MonoBehaviour
 {
-    public TMP_Text timerText; // Reference to the TMP Text component
-    public float startTime = 100f; // Starting time
-    private float currentTime;
-    public float lerpSpeed = 1f;
-    private bool isRunning = true;
+    [Header("UI References")]
+    public TMP_Text timerText;
+    public Image redScreenEffect;
 
-    public Image redScreenEffect; // Reference to the UI Image for red flash effect
-    public float flashDuration = 0.5f; // Duration of the red flash
-    public HealthBar playerHealth; // Reference to the player's health bar
+    [Header("Timer Settings")]
+    public float startTime = 100f;
+    [Tooltip("Speed at which the timer counts down (1 = normal speed)")]
+    public float lerpSpeed = 1f;
+    [SerializeField] private float _currentTime;
+    private bool _isRunning = true;
+    private Coroutine _countdownCoroutine;
+    private Coroutine _overtimeCoroutine;
+
+    [Header("Overtime Settings")]
+    public float healthPenalty = 10f;
+    public HealthBar player1Health;
     public HealthBar player2Health;
-    public float healthPenalty = 10f; // Amount of health to reduce every second after time runs out
+    public Color overtimeColor = new Color(0.5f, 0f, 0f, 0.2f);
+    public string overtimeText = "Overtime";
+
+    public float CurrentTime
+    {
+        get => _currentTime;
+        private set
+        {
+            _currentTime = Mathf.Max(0, value);
+            UpdateTimerUI();
+        }
+    }
+
+    public bool IsInOvertime { get; private set; }
 
     private void Start()
     {
-        currentTime = startTime;
+        ResetTimer();
+        _countdownCoroutine = StartCoroutine(Countdown());
+        PauseTimer();
+    }
+
+    private void ResetTimer()
+    {
+        CurrentTime = startTime;
+        IsInOvertime = false;
         UpdateTimerUI();
-        StartCoroutine(Countdown());
+
+        // Reset red screen effect
+        if (redScreenEffect != null)
+        {
+            redScreenEffect.color = new Color(overtimeColor.r, overtimeColor.g, overtimeColor.b, 0f);
+        }
     }
 
     private System.Collections.IEnumerator Countdown()
     {
-        while (currentTime > 0 && isRunning)
+        while (CurrentTime > 0 && _isRunning)
         {
             float elapsedTime = 0f;
-            float previousTime = currentTime;
-            float targetTime = Mathf.Max(0, currentTime - 1);
+            float previousTime = CurrentTime;
+            float targetTime = Mathf.Max(0, CurrentTime - 1);
 
-            while (elapsedTime < 1f)
+            while (elapsedTime < 1f && _isRunning)
             {
                 elapsedTime += Time.deltaTime * lerpSpeed;
-                currentTime = Mathf.Lerp(previousTime, targetTime, elapsedTime);
-                UpdateTimerUI();
+                CurrentTime = Mathf.Lerp(previousTime, targetTime, elapsedTime);
                 yield return null;
             }
 
-            currentTime = targetTime;
-            UpdateTimerUI();
+            if (_isRunning) CurrentTime = targetTime;
         }
 
-        StartCoroutine(Overtime());
+        if (_isRunning)
+        {
+            _overtimeCoroutine = StartCoroutine(Overtime());
+        }
     }
 
     private System.Collections.IEnumerator Overtime()
     {
-        while (true)
+        IsInOvertime = true;
+        timerText.text = overtimeText;
+
+        // Pulsing setup
+        float pulseSpeed = 2f;
+        float minAlpha = 0.01f;
+        float maxAlpha = overtimeColor.a;
+        float elapsedTime = 0f;
+
+        // Damage timing
+        float damageInterval = 1f; // Apply damage every 1 second
+        float nextDamageTime = Time.time + damageInterval;
+
+        while (_isRunning && CurrentTime <= 0)
         {
-            timerText.text = "Overtime";
-            TriggerTimeOutEffect();
-            yield return new WaitForSeconds(1f);
+            // --- Handle visual pulsing ---
+            float alpha = Mathf.Lerp(minAlpha, maxAlpha,
+                (Mathf.Sin(elapsedTime * pulseSpeed) * 0.5f + 0.5f));
+
+            redScreenEffect.color = new Color(
+                overtimeColor.r,
+                overtimeColor.g,
+                overtimeColor.b,
+                alpha
+            );
+            elapsedTime += Time.deltaTime;
+
+            // --- Handle damage (once per second) ---
+            if (Time.time >= nextDamageTime)
+            {
+                TriggerTimeOutEffect();
+                nextDamageTime = Time.time + damageInterval;
+            }
+
+            yield return null;
+        }
+
+        // Cleanup
+        if (CurrentTime > 0)
+        {
+            IsInOvertime = false;
+            redScreenEffect.color = new Color(overtimeColor.r, overtimeColor.g, overtimeColor.b, 0f);
+            _countdownCoroutine = StartCoroutine(Countdown());
         }
     }
 
     private void UpdateTimerUI()
     {
-        if (currentTime > 0)
-        {
-            timerText.text = Mathf.Ceil(currentTime).ToString(); // Display rounded time
-        }
-        else
-        {
-            timerText.text = "Overtime";
-        }
+        timerText.text = CurrentTime > 0 ? Mathf.Ceil(CurrentTime).ToString() : overtimeText;
     }
 
     private void TriggerTimeOutEffect()
     {
-        if (playerHealth != null)
+        if (player1Health != null) player1Health.TakeDamage(healthPenalty);
+        if (player2Health != null) player2Health.TakeDamage(healthPenalty);
+    }
+
+    public void PauseTimer()
+    {
+        _isRunning = false;
+    }
+
+    public void ResumeTimer()
+    {
+        if (_isRunning) return;
+
+        _isRunning = true;
+        _countdownCoroutine = StartCoroutine(Countdown());
+    }
+
+    public void AddTime(float seconds)
+    {
+        CurrentTime += seconds;
+
+        // If we were in overtime and now have time again
+        if (IsInOvertime && CurrentTime > 0)
         {
-            playerHealth.TakeDamage(healthPenalty);
-            player2Health.TakeDamage(healthPenalty);
-        }
-        if (redScreenEffect != null)
-        {
-            StartCoroutine(FlashRedScreen());
+            IsInOvertime = false;
+            if (_overtimeCoroutine != null)
+            {
+                StopCoroutine(_overtimeCoroutine);
+            }
+
+            // Clear the red screen
+            if (redScreenEffect != null)
+            {
+                redScreenEffect.color = new Color(overtimeColor.r, overtimeColor.g, overtimeColor.b, 0f);
+            }
+
+            // Restart normal countdown
+            _countdownCoroutine = StartCoroutine(Countdown());
         }
     }
 
-    private System.Collections.IEnumerator FlashRedScreen()
+    public void SetTimer(float newTime, bool resetImmediately = false)
     {
-        redScreenEffect.color = new Color(1f, 0f, 0f, 0.3f); // Semi-transparent red
-        yield return new WaitForSeconds(flashDuration);
-        redScreenEffect.color = new Color(1f, 0f, 0f, 0f); // Fully transparent
-    }
-
-    public void StopTimer()
-    {
-        isRunning = false;
+        startTime = newTime;
+        if (resetImmediately)
+        {
+            ResetTimer();
+            if (_countdownCoroutine != null)
+            {
+                StopCoroutine(_countdownCoroutine);
+                _countdownCoroutine = StartCoroutine(Countdown());
+            }
+        }
     }
 }

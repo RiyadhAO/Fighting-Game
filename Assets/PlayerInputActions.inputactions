@@ -49,6 +49,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "UseAdrenaline",
+                    "type": "Button",
+                    "id": "cb727afd-338a-4367-a61e-417599dba9cd",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -181,6 +190,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "EvasiveRoll",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "853a685b-bb8f-4f5f-96dd-91b699224167",
+                    "path": "<Keyboard>/f",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "UseAdrenaline",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

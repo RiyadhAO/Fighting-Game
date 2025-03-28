@@ -49,6 +49,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "UseAdrenaline",
+                    "type": "Button",
+                    "id": "6224d010-8999-4029-93a8-cb3993a47e01",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -269,6 +278,28 @@
                     "processors": "",
                     "groups": "",
                     "action": "EvasiveRoll",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "7047a947-0998-4357-a353-b07bfcfd672f",
+                    "path": "<Keyboard>/p",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "UseAdrenaline",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "8d287536-a77d-48ec-8076-9137a4e9e263",
+                    "path": "<Gamepad>/leftTrigger",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "UseAdrenaline",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
