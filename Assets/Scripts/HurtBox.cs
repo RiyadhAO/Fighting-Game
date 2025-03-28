@@ -14,6 +14,7 @@ public class Hurtbox : MonoBehaviour
     private Animator animator;
     public ComposureBar EnemyComposure;
     public TMP_Text parryText;
+    private UseAdrenaline useAdrenaline; // Added reference to UseAdrenaline
 
     public bool isInGrab = false; // Prevents multiple grabs
     private bool isTakingDamage = false; // Prevents interruption
@@ -28,6 +29,12 @@ public class Hurtbox : MonoBehaviour
         playerMovement = GetComponentInParent<PlayerMovement>();
         combatScript = GetComponentInParent<CombatBase>();
         animator = GetComponentInParent<Animator>();
+        useAdrenaline = GetComponentInParent<UseAdrenaline>(); // Initialize UseAdrenaline
+
+        if (useAdrenaline == null)
+        {
+            Debug.LogError("UseAdrenaline component missing on " + gameObject.name);
+        }
 
         if (parryText != null)
         {
@@ -77,6 +84,13 @@ public class Hurtbox : MonoBehaviour
     private IEnumerator PlayDamageAnimation()
     {
         if (healthBar.health <= 0) yield break;
+
+        // **Skip damage animation if adrenaline is active**
+        if (useAdrenaline != null && useAdrenaline.isAdrenalineActive)
+        {
+            Debug.Log("Adrenaline active! Skipping damage animation.");
+            yield break;
+        }
 
         isTakingDamage = true;
 
@@ -167,6 +181,4 @@ public class Hurtbox : MonoBehaviour
         }
     }
 }
-
-
 

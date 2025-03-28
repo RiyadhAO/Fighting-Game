@@ -71,6 +71,15 @@ public partial class @PlayerInputActions1: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""UseAdrenaline"",
+                    ""type"": ""Button"",
+                    ""id"": ""6224d010-8999-4029-93a8-cb3993a47e01"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -293,6 +302,28 @@ public partial class @PlayerInputActions1: IInputActionCollection2, IDisposable
                     ""action"": ""EvasiveRoll"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""7047a947-0998-4357-a353-b07bfcfd672f"",
+                    ""path"": ""<Keyboard>/p"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""UseAdrenaline"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""8d287536-a77d-48ec-8076-9137a4e9e263"",
+                    ""path"": ""<Gamepad>/leftTrigger"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""UseAdrenaline"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -306,6 +337,7 @@ public partial class @PlayerInputActions1: IInputActionCollection2, IDisposable
         m_Gameplay_Attack = m_Gameplay.FindAction("Attack", throwIfNotFound: true);
         m_Gameplay_SlipStep = m_Gameplay.FindAction("SlipStep", throwIfNotFound: true);
         m_Gameplay_EvasiveRoll = m_Gameplay.FindAction("EvasiveRoll", throwIfNotFound: true);
+        m_Gameplay_UseAdrenaline = m_Gameplay.FindAction("UseAdrenaline", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -372,6 +404,7 @@ public partial class @PlayerInputActions1: IInputActionCollection2, IDisposable
     private readonly InputAction m_Gameplay_Attack;
     private readonly InputAction m_Gameplay_SlipStep;
     private readonly InputAction m_Gameplay_EvasiveRoll;
+    private readonly InputAction m_Gameplay_UseAdrenaline;
     public struct GameplayActions
     {
         private @PlayerInputActions1 m_Wrapper;
@@ -381,6 +414,7 @@ public partial class @PlayerInputActions1: IInputActionCollection2, IDisposable
         public InputAction @Attack => m_Wrapper.m_Gameplay_Attack;
         public InputAction @SlipStep => m_Wrapper.m_Gameplay_SlipStep;
         public InputAction @EvasiveRoll => m_Wrapper.m_Gameplay_EvasiveRoll;
+        public InputAction @UseAdrenaline => m_Wrapper.m_Gameplay_UseAdrenaline;
         public InputActionMap Get() { return m_Wrapper.m_Gameplay; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -405,6 +439,9 @@ public partial class @PlayerInputActions1: IInputActionCollection2, IDisposable
             @EvasiveRoll.started += instance.OnEvasiveRoll;
             @EvasiveRoll.performed += instance.OnEvasiveRoll;
             @EvasiveRoll.canceled += instance.OnEvasiveRoll;
+            @UseAdrenaline.started += instance.OnUseAdrenaline;
+            @UseAdrenaline.performed += instance.OnUseAdrenaline;
+            @UseAdrenaline.canceled += instance.OnUseAdrenaline;
         }
 
         private void UnregisterCallbacks(IGameplayActions instance)
@@ -424,6 +461,9 @@ public partial class @PlayerInputActions1: IInputActionCollection2, IDisposable
             @EvasiveRoll.started -= instance.OnEvasiveRoll;
             @EvasiveRoll.performed -= instance.OnEvasiveRoll;
             @EvasiveRoll.canceled -= instance.OnEvasiveRoll;
+            @UseAdrenaline.started -= instance.OnUseAdrenaline;
+            @UseAdrenaline.performed -= instance.OnUseAdrenaline;
+            @UseAdrenaline.canceled -= instance.OnUseAdrenaline;
         }
 
         public void RemoveCallbacks(IGameplayActions instance)
@@ -448,5 +488,6 @@ public partial class @PlayerInputActions1: IInputActionCollection2, IDisposable
         void OnAttack(InputAction.CallbackContext context);
         void OnSlipStep(InputAction.CallbackContext context);
         void OnEvasiveRoll(InputAction.CallbackContext context);
+        void OnUseAdrenaline(InputAction.CallbackContext context);
     }
 }

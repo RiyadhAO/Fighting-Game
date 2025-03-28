@@ -48,6 +48,11 @@ public class PlayerSlipStep : MonoBehaviour
 
     private void OnSlipStep(InputAction.CallbackContext context)
     {
+        if (ComposureBar.currentComposure <= ComposureCost + 3)
+        {
+            Debug.Log("Cannot step with low stamina");
+            return;
+        }
         // Prevent Slip Step if currently attacking
         if (canSlipStep && ComposureBar.currentComposure >= ComposureCost &&
             !playerMovement.isStaggered &&

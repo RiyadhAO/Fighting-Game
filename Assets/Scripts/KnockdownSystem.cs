@@ -7,6 +7,7 @@ public class KnockdownSystem : MonoBehaviour
     public Animator animator;
     public float knockdownTime = 3f;
     public bool isKnockedDown = false;
+    public float bonusTime = 30f;
 
     public HealthBar healthBar; // Assigned in Unity Editor
     public KnockdownTracker knockdownTracker;
@@ -14,6 +15,9 @@ public class KnockdownSystem : MonoBehaviour
     private PlayerInput playerInput;
     public PlayerInput EnemyPlayerInput;
     private Rigidbody rb;
+    public StopwatchCountdown stopwatch;
+
+    public AdrenalineBar adrenaline;
 
     void Start()
     {
@@ -40,6 +44,7 @@ public class KnockdownSystem : MonoBehaviour
     {
         isKnockedDown = true;
         animator.SetTrigger("Knockdown");
+        stopwatch.PauseTimer();
 
         // Disable player input during knockdown
         if (playerInput != null)
@@ -66,6 +71,7 @@ public class KnockdownSystem : MonoBehaviour
         healthBar.health = healthBar.maxHealth;
         healthBar.healthSlider.value = healthBar.health;
         healthBar.easeHealthSlider.value = healthBar.health;
+        adrenaline.ActivateAdrenaline();
 
         // Register knockdown
         if (knockdownTracker != null)
@@ -79,7 +85,13 @@ public class KnockdownSystem : MonoBehaviour
             EnemyPlayerInput.enabled = true;
             playerInput.enabled = true;
         }
-
+        
+        if (stopwatch != null && stopwatch.IsInOvertime)
+        {
+            stopwatch.AddTime(bonusTime);
+            // Add any additional effects here (sound, particles, etc.)
+        }
+        stopwatch.ResumeTimer();
         isKnockedDown = false;
     }
 }

@@ -66,6 +66,12 @@ public class PlayerEvasiveRoll : MonoBehaviour
             return;
         }
 
+        if (ComposureBar.currentComposure <= composureCost + 5)
+        {
+            Debug.Log("Cannot roll with low stamina");
+            return;
+        }
+
         if (ComposureBar.currentComposure >= composureCost && !playerMovement.isStaggered)
         {
             rollDirection = new Vector3(playerMovement.moveInput.x, 0, playerMovement.moveInput.y).normalized;

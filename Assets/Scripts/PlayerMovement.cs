@@ -33,8 +33,11 @@ public class PlayerMovement : MonoBehaviour
     private CombatBase combatBase;
     private PlayerEvasiveRoll evasiveRoll;
 
+    public GameObject StunEffect;
+
     private void Awake()
     {
+        StunEffect.SetActive(false);
         rb = GetComponent<Rigidbody>();
         playerInput = GetComponent<PlayerInput>();
         animator = GetComponent<Animator>();
@@ -220,6 +223,7 @@ public class PlayerMovement : MonoBehaviour
 
         isStaggered = true;
         isBlocking = false;
+        StunEffect.SetActive(true);
 
         SetHurtboxState(normalHurtboxes, true);
         SetHurtboxState(blockingHurtboxes, false);
@@ -236,6 +240,7 @@ public class PlayerMovement : MonoBehaviour
 
         composureBar.regenRate = 3;
         isStaggered = false;
+        StunEffect.SetActive(false);
         Debug.Log("Player recovered from stagger.");
 
         playerInput.enabled = true;
