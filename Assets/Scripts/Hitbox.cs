@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
+using UnityEngine.InputSystem;
 
 public class Hitbox : MonoBehaviour
 {
@@ -13,30 +15,44 @@ public class Hitbox : MonoBehaviour
     public string hitType;
 
     [Header("Grab Settings")]
-    public MonoBehaviour attackerInput; // Assign the PlayerInput component for the attacker
-    public MonoBehaviour targetInput;  // Assign the PlayerInput component for the target
+    public PlayerInput attackerInput; // Use PlayerInput for new input system
+    public PlayerInput targetInput;
 
     private Collider hitboxCollider;
     private List<Hurtbox> overlappingHurtboxes = new List<Hurtbox>();
+    private bool isGrabActive = false;
 
-    private bool isGrabActive = false; // Track if a grab is currently active
+    public GameObject criticalHitTextPrefab;
+    public GameObject weakHitTextPrefab;
+
+    [Header("Mash Mechanics")]
+    public float maxMashTime = 1.5f;
+    private int mashCount = 0;
+    private InputAction mashAction;
+
+    private List<InputAction> disabledActions = new List<InputAction>(); // Track disabled actions
 
     void Start()
     {
         hitboxCollider = GetComponent<Collider>();
         hitboxCollider.enabled = false;
+
+        if (attackerInput != null)
+        {
+            mashAction = attackerInput.actions["Mash"];
+        }
     }
 
     public void ActivateHitbox()
     {
-        overlappingHurtboxes.Clear(); // Reset previous collisions
+        overlappingHurtboxes.Clear();
         hitboxCollider.enabled = true;
     }
 
     public void DeactivateHitbox()
     {
         hitboxCollider.enabled = false;
-        if (!isGrabActive) // Only deal damage if no grab is active
+        if (!isGrabActive)
         {
             DealDamageToHighestPriorityHurtbox();
         }
@@ -48,8 +64,6 @@ public class Hitbox : MonoBehaviour
         if (hurtbox != null && !overlappingHurtboxes.Contains(hurtbox))
         {
             overlappingHurtboxes.Add(hurtbox);
-
-            // **If this is a grab attack, execute the grab sequence**
             if (hitboxType == HitboxType.Grab && !isGrabActive)
             {
                 StartCoroutine(ExecuteGrab(hurtbox.gameObject));
@@ -73,99 +87,149 @@ public class Hitbox : MonoBehaviour
         overlappingHurtboxes.Sort((a, b) => a.priority.CompareTo(b.priority));
         Hurtbox targetHurtbox = overlappingHurtboxes[0];
 
-        PlayerSlipStep slipStep = targetHurtbox.GetComponentInParent<PlayerSlipStep>();
-
-        bool isBlocked = targetHurtbox.isBlockingHurtbox;
-        bool isInvincibleToThisAttack = slipStep != null && slipStep.isInvincible && hitboxType == HitboxType.Inside;
-
-        if (!isInvincibleToThisAttack)
+        float damageMultiplier = Random.value <= 0.1f ? 1.5f : Random.value >= 0.9f ? 0.75f : 1f;
+        if (damageMultiplier == 1.5f)
         {
-            targetHurtbox.TakeDamage(healthDamage, composureDamage, isBlocked, hitType);
-            Debug.Log($"{attackName} hit {targetHurtbox.gameObject.name}!");
+            SpawnFloatingText(targetHurtbox.transform.position, true);
         }
-        else
+        else if (damageMultiplier == 0.75f)
         {
-            Debug.Log($"{attackName} was avoided by Slip Step!");
+            SpawnFloatingText(targetHurtbox.transform.position, false);
+        }
+
+        float finalHealthDamage = healthDamage * damageMultiplier;
+        float finalComposureDamage = composureDamage * damageMultiplier;
+
+        targetHurtbox.TakeDamage(finalHealthDamage, finalComposureDamage, targetHurtbox.isBlockingHurtbox, hitType);
+    }
+
+    private void SpawnFloatingText(Vector3 position, bool isCritical)
+    {
+        GameObject prefabToSpawn = isCritical ? criticalHitTextPrefab : weakHitTextPrefab;
+        if (prefabToSpawn != null)
+        {
+            GameObject textInstance = Instantiate(prefabToSpawn, position + new Vector3(7f, -1f, 0), Quaternion.identity);
+            Destroy(textInstance, 1f);
         }
     }
 
+    public GameObject mashPromptUI; // Assign a UI Text/Image in Inspector
+
     private IEnumerator ExecuteGrab(GameObject target)
     {
-        isGrabActive = true; // Mark grab as active
+        isGrabActive = true;
+        mashCount = 0;
+
+        // Show mash prompt
+        if (mashPromptUI != null)
+            mashPromptUI.SetActive(true);
 
         Hurtbox hurtbox = target.GetComponent<Hurtbox>();
         if (hurtbox == null || hurtbox.isInGrab)
         {
-            Debug.Log("Grab attempt failed: No valid target.");
-            ResetAttacker();  // Ensure attacker can move and attack again
-            isGrabActive = false; // Mark grab as inactive
+            ResetAttacker();
+            isGrabActive = false;
             yield break;
         }
 
         hurtbox.isInGrab = true;
 
-        Debug.Log($"{target.name} was grabbed by {gameObject.name} using {attackName}!");
-
-        // Get attacker and target components
         Rigidbody attackerRb = GetComponentInParent<Rigidbody>();
         Rigidbody targetRb = target.GetComponentInParent<Rigidbody>();
 
-        // **Disable both players' input actions**
-        if (attackerInput != null) attackerInput.enabled = false;
-        if (targetInput != null) targetInput.enabled = false;
+        bool wasAttackerKinematic = attackerRb != null && attackerRb.isKinematic;
+        bool wasTargetKinematic = targetRb != null && targetRb.isKinematic;
 
-        // **Freeze both players' rigid bodies**
-        if (attackerRb != null)
-        {
-            attackerRb.isKinematic = true; // Freeze the rigidbody
-        }
-        if (targetRb != null)
-        {
-            targetRb.isKinematic = true; // Freeze the rigidbody
-        }
+        DisableMovementActions(attackerInput);
+        DisableMovementActions(targetInput);
 
-        // Play grab animations
+        if (attackerRb != null) attackerRb.isKinematic = true;
+        if (targetRb != null) targetRb.isKinematic = true;
+
         Animator attackerAnimator = GetComponentInParent<Animator>();
         Animator targetAnimator = target.GetComponentInParent<Animator>();
 
-        if (attackerAnimator != null) attackerAnimator.SetTrigger("Grab");
-        if (targetAnimator != null) targetAnimator.SetTrigger("Grabbed");
+        attackerAnimator?.SetTrigger("Grab");
+        targetAnimator?.SetTrigger("Grabbed");
 
-        yield return new WaitForSeconds(1.5f); // Wait for grab animation to complete
+        yield return StartCoroutine(TrackMashInput());
 
-        // Apply damage only if the grab connected
-        if (hurtbox != null)
-        {
-            hurtbox.healthBar.TakeDamage(40);
-            Debug.Log($"{target.name} took grab damage from {attackName}!");
-        }
+        float baseDamage = 20f;
+        float maxDamage = 50f;
+        float damageMultiplier = Mathf.Clamp(1 + (mashCount / 10f), 1, maxDamage / baseDamage);
+        float finalGrabDamage = baseDamage * damageMultiplier;
 
-        // **Re-enable both players' input actions and unfreeze rigid bodies**
-        ResetAttacker();
-        if (targetInput != null) targetInput.enabled = true;
-        if (targetRb != null) targetRb.isKinematic = false;
+        hurtbox.healthBar.TakeDamage(finalGrabDamage);
 
-        if (attackerInput != null)
-        {
-            attackerInput.enabled = true;
-        }
-        if (attackerRb != null)
-        {
-            attackerRb.isKinematic = false;
-        }
+        EnableMovementActions(attackerInput);
+        EnableMovementActions(targetInput);
+
+        if (attackerRb != null) attackerRb.isKinematic = wasAttackerKinematic;
+        if (targetRb != null) targetRb.isKinematic = wasTargetKinematic;
 
         hurtbox.isInGrab = false;
-        isGrabActive = false; // Mark grab as inactive
+        isGrabActive = false;
+
+        // Hide mash prompt
+        if (mashPromptUI != null)
+            mashPromptUI.SetActive(false);
     }
 
-    // **New Function**: Ensures the attacker regains control after grab sequence
+    private IEnumerator TrackMashInput()
+    {
+        float timer = 0f;
+        mashCount = 0;
+
+        // Ensure action is properly set up
+        if (mashAction != null)
+        {
+            mashAction.performed += ctx => mashCount++;
+            mashAction.Enable();
+        }
+
+        while (timer < maxMashTime)
+        {
+            timer += Time.deltaTime;
+            yield return null;
+        }
+
+        if (mashAction != null)
+        {
+            mashAction.Disable();
+            mashAction.performed -= ctx => mashCount++; // Unsubscribe
+        }
+    }
+
+    private void DisableMovementActions(PlayerInput playerInput)
+    {
+        if (playerInput == null) return;
+
+        foreach (var action in playerInput.actions)
+        {
+            if (action.name == "Move" || action.name == "Attack" || action.name == "Block" ||
+                action.name == "SlipStep" || action.name == "EvasiveRoll" || action.name == "UseAdrenaline")
+            {
+                action.Disable();
+                disabledActions.Add(action);
+            }
+        }
+    }
+
+    private void EnableMovementActions(PlayerInput playerInput)
+    {
+        if (playerInput == null) return;
+
+        foreach (var action in disabledActions)
+        {
+            action.Enable();
+        }
+        disabledActions.Clear();
+    }
+
     private void ResetAttacker()
     {
-        if (attackerInput != null) attackerInput.enabled = true;
-
+        EnableMovementActions(attackerInput);
         Rigidbody attackerRb = GetComponentInParent<Rigidbody>();
         if (attackerRb != null) attackerRb.isKinematic = false;
-
-        Debug.Log("Attacker can move and attack again!");
     }
 }

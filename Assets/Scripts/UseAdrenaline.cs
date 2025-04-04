@@ -11,8 +11,6 @@ public class UseAdrenaline : MonoBehaviour
     [SerializeField] private float adrenalineCost = 30f;
     [SerializeField] private float adrenalineDrainRate = 2f;
     [SerializeField] private float speedMultiplier = 1.5f;
-    [SerializeField] private float damageReduction = 0.7f;
-    [SerializeField] private float regenerationRate = 0.6f;
 
     public GameObject Aura;
     public bool isAdrenalineActive = false;

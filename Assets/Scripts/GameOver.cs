@@ -31,7 +31,7 @@ public class GameOver : MonoBehaviour
         Debug.Log("Main Menu Button Pressed");
 
         Time.timeScale = 1f; // Resume time
-        SceneManager.LoadScene("MainMenu"); // Change to correct scene name
+        SceneManager.LoadScene("Demo1"); // Change to correct scene name
     }
 
     void Update()

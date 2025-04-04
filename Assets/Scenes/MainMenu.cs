@@ -32,4 +32,14 @@ public class MainMenu : MonoBehaviour
         Application.Quit();
         Debug.Log("You would have Quit");
     }
+
+    public void Tutorial()
+    {
+        SceneManager.LoadScene("Tutorial");
+    }
+
+    public void Practice()
+    {
+        SceneManager.LoadScene("Practice");
+    }
 }
