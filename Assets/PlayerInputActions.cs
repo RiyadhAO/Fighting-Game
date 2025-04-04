@@ -80,6 +80,15 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Mash"",
+                    ""type"": ""Button"",
+                    ""id"": ""3e7abfe6-b843-41bf-91ae-bb1dc073ed76"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -225,6 +234,17 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""action"": ""UseAdrenaline"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""756861fc-2386-4891-8f7c-a5798228c208"",
+                    ""path"": ""<Keyboard>/h"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Mash"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -239,6 +259,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         m_Gameplay_SlipStep = m_Gameplay.FindAction("SlipStep", throwIfNotFound: true);
         m_Gameplay_EvasiveRoll = m_Gameplay.FindAction("EvasiveRoll", throwIfNotFound: true);
         m_Gameplay_UseAdrenaline = m_Gameplay.FindAction("UseAdrenaline", throwIfNotFound: true);
+        m_Gameplay_Mash = m_Gameplay.FindAction("Mash", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -306,6 +327,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
     private readonly InputAction m_Gameplay_SlipStep;
     private readonly InputAction m_Gameplay_EvasiveRoll;
     private readonly InputAction m_Gameplay_UseAdrenaline;
+    private readonly InputAction m_Gameplay_Mash;
     public struct GameplayActions
     {
         private @PlayerInputActions m_Wrapper;
@@ -316,6 +338,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         public InputAction @SlipStep => m_Wrapper.m_Gameplay_SlipStep;
         public InputAction @EvasiveRoll => m_Wrapper.m_Gameplay_EvasiveRoll;
         public InputAction @UseAdrenaline => m_Wrapper.m_Gameplay_UseAdrenaline;
+        public InputAction @Mash => m_Wrapper.m_Gameplay_Mash;
         public InputActionMap Get() { return m_Wrapper.m_Gameplay; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -343,6 +366,9 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             @UseAdrenaline.started += instance.OnUseAdrenaline;
             @UseAdrenaline.performed += instance.OnUseAdrenaline;
             @UseAdrenaline.canceled += instance.OnUseAdrenaline;
+            @Mash.started += instance.OnMash;
+            @Mash.performed += instance.OnMash;
+            @Mash.canceled += instance.OnMash;
         }
 
         private void UnregisterCallbacks(IGameplayActions instance)
@@ -365,6 +391,9 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             @UseAdrenaline.started -= instance.OnUseAdrenaline;
             @UseAdrenaline.performed -= instance.OnUseAdrenaline;
             @UseAdrenaline.canceled -= instance.OnUseAdrenaline;
+            @Mash.started -= instance.OnMash;
+            @Mash.performed -= instance.OnMash;
+            @Mash.canceled -= instance.OnMash;
         }
 
         public void RemoveCallbacks(IGameplayActions instance)
@@ -390,5 +419,6 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         void OnSlipStep(InputAction.CallbackContext context);
         void OnEvasiveRoll(InputAction.CallbackContext context);
         void OnUseAdrenaline(InputAction.CallbackContext context);
+        void OnMash(InputAction.CallbackContext context);
     }
 }

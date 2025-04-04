@@ -48,14 +48,23 @@ public class KnockdownSystem : MonoBehaviour
 
         // Disable player input during knockdown
         if (playerInput != null)
+        {
             EnemyPlayerInput.enabled = false;
             playerInput.enabled = false;
+        }
 
-        // Stop movement completely
+        // Stop movement completely & freeze Rigidbody
         if (rb != null)
         {
             rb.velocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
+            rb.isKinematic = true;  // Freezes physics movement
+        }
+
+        // Register knockdown before waiting
+        if (knockdownTracker != null)
+        {
+            knockdownTracker.RegisterKnockdown();
         }
 
         yield return new WaitForSeconds(knockdownTime);
@@ -73,23 +82,24 @@ public class KnockdownSystem : MonoBehaviour
         healthBar.easeHealthSlider.value = healthBar.health;
         adrenaline.ActivateAdrenaline();
 
-        // Register knockdown
-        if (knockdownTracker != null)
-        {
-            knockdownTracker.RegisterKnockdown();
-        }
-
         // Re-enable input
         if (playerInput != null)
         {
             EnemyPlayerInput.enabled = true;
             playerInput.enabled = true;
         }
-        
+
+        // Unfreeze Rigidbody so the player can move again
+        if (rb != null)
+        {
+            rb.isKinematic = false;
+            rb.velocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
+
         if (stopwatch != null && stopwatch.IsInOvertime)
         {
             stopwatch.AddTime(bonusTime);
-            // Add any additional effects here (sound, particles, etc.)
         }
         stopwatch.ResumeTimer();
         isKnockedDown = false;

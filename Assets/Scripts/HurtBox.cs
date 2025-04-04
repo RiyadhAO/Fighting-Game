@@ -13,7 +13,6 @@ public class Hurtbox : MonoBehaviour
     private CombatBase combatScript;
     private Animator animator;
     public ComposureBar EnemyComposure;
-    public TMP_Text parryText;
     private UseAdrenaline useAdrenaline; // Added reference to UseAdrenaline
 
     public bool isInGrab = false; // Prevents multiple grabs
@@ -23,6 +22,7 @@ public class Hurtbox : MonoBehaviour
     public AudioClip lightHitSound;
     public AudioClip heavyHitSound;
     public AudioClip blockSound;
+    public AudioClip parrySound; // New parry sound effect
 
     private void Start()
     {
@@ -34,11 +34,6 @@ public class Hurtbox : MonoBehaviour
         if (useAdrenaline == null)
         {
             Debug.LogError("UseAdrenaline component missing on " + gameObject.name);
-        }
-
-        if (parryText != null)
-        {
-            parryText.gameObject.SetActive(false);  // Make sure it's hidden initially
         }
     }
 
@@ -99,7 +94,7 @@ public class Hurtbox : MonoBehaviour
             GameObject effect = Instantiate(hitEffectPrefab, hitEffectSpawnPoint.position, Quaternion.identity);
             effect.transform.localScale = Vector3.one * 3f;
             Destroy(effect, 1.5f);
-        }
+    }
 
         if (playerMovement != null) playerMovement.enabled = false;
         if (combatScript != null) combatScript.isAttacking = true;
@@ -138,23 +133,7 @@ public class Hurtbox : MonoBehaviour
             Destroy(effect, 1.5f);
         }
 
-        if (parryText != null)
-        {
-            StartCoroutine(ShowParryText());
-        }
-    }
-
-    private IEnumerator ShowParryText()
-    {
-        if (parryText == null)
-        {
-            Debug.LogError("Parry Text is not assigned!");
-            yield break;
-        }
-
-        parryText.gameObject.SetActive(true);
-        yield return new WaitForSeconds(1f);
-        parryText.gameObject.SetActive(false);
+        PlaySound(parrySound); // Play parry sound effect
     }
 
     private void PlayHitSound(string hitType)
@@ -181,4 +160,3 @@ public class Hurtbox : MonoBehaviour
         }
     }
 }
-
