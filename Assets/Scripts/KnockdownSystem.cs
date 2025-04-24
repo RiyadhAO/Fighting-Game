@@ -4,6 +4,7 @@ using UnityEngine.InputSystem;
 
 public class KnockdownSystem : MonoBehaviour
 {
+    public CharacterInjury injurySystem;
     public Animator animator;
     public float knockdownTime = 3f;
     public bool isKnockedDown = false;
@@ -29,6 +30,9 @@ public class KnockdownSystem : MonoBehaviour
 
         if (healthBar == null)
             Debug.LogError("HealthBar not assigned in the editor!");
+
+        if (injurySystem == null)
+            injurySystem = GetComponent<CharacterInjury>();
     }
 
     void Update()
@@ -81,6 +85,12 @@ public class KnockdownSystem : MonoBehaviour
         healthBar.healthSlider.value = healthBar.health;
         healthBar.easeHealthSlider.value = healthBar.health;
         adrenaline.ActivateAdrenaline();
+
+        CharacterInjury injury = GetComponent<CharacterInjury>();
+        if (injury != null)
+        {
+            injury.EvaluateInjuryAfterKnockdown();
+        }
 
         // Re-enable input
         if (playerInput != null)

@@ -25,14 +25,14 @@ public class AdrenalineBar : MonoBehaviour
     private void Start()
     {
         InitializeUI();
-        adrenalineCheckText.gameObject.SetActive(false); // Corrected
+        adrenalineCheckText.gameObject.SetActive(false);
     }
 
     private void Update()
     {
         if (isDraining)
         {
-            adrenalineCheckText.gameObject.SetActive(false); // Corrected
+            adrenalineCheckText.gameObject.SetActive(false);
 
             CurrentAdrenaline -= drainRate * Time.deltaTime;
             if (CurrentAdrenaline <= 0f)
@@ -51,11 +51,10 @@ public class AdrenalineBar : MonoBehaviour
 
             if (adrenalineCheckText != null && CurrentAdrenaline >= 30f)
             {
-                adrenalineCheckText.gameObject.SetActive(true); // Corrected
+                adrenalineCheckText.gameObject.SetActive(true);
             }
         }
     }
-
 
     public void ActivateAdrenaline()
     {

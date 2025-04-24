@@ -104,6 +104,8 @@ public class PlayerEvasiveRoll : MonoBehaviour
 
         float elapsedTime = 0f;
 
+        GetComponent<PlayerState>()?.RegisterPush();
+
         while (elapsedTime < rollDuration)
         {
             // **Collision Check Before Moving**
@@ -113,7 +115,7 @@ public class PlayerEvasiveRoll : MonoBehaviour
                 break; // Stop movement if a wall is detected
             }
 
-            // Apply force-based movement
+            // Apply force
             rb.AddForce(rollDirection * rollForce, ForceMode.VelocityChange);
 
             elapsedTime += Time.deltaTime;
