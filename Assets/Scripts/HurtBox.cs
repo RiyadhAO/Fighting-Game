@@ -5,8 +5,11 @@ using TMPro;
 
 public class Hurtbox : MonoBehaviour
 {
+    public HurtboxType hurtboxType; // Set in Inspector
+
     public HealthBar healthBar;
     public ComposureBar composureBar;
+    public Transform knockbackAnchor; // Drag in the knockback direction anchor on prefab
     public int priority = 2; // Lower value = higher priority
     public bool isBlockingHurtbox = false; // Distinguishes blocking hurtboxes
     private PlayerMovement playerMovement;

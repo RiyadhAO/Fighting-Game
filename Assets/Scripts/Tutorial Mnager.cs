@@ -14,6 +14,8 @@ public class GameManager : MonoBehaviour
     public GameObject PV;
     public GameObject SV;
     public GameObject RV;
+    public GameObject OV;
+    public GameObject BV;
 
     public GameObject character;
     public GameObject character2;
@@ -57,6 +59,8 @@ public class GameManager : MonoBehaviour
             GV.SetActive(false);
             SV.SetActive(false);
             RV.SetActive(false);
+            OV.SetActive(false);
+            BV.SetActive(false);
             tut1.SetActive(false);
             tut2.SetActive(false);
         }
@@ -83,7 +87,7 @@ public class GameManager : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Return) && popUpIndex != 15)
         {
-            waitTime = 10;
+            waitTime = 15;
             popUpIndex++;
         }
 
@@ -106,7 +110,7 @@ public class GameManager : MonoBehaviour
         {
             if (waitTime <= 0)
             {
-                waitTime = 10;
+                waitTime = 5;
                 popUpIndex++;
             }
             else
@@ -121,7 +125,7 @@ public class GameManager : MonoBehaviour
             {
                 if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.A))
                 {
-                    waitTime = 10;
+                    waitTime = 5;
                     popUpIndex++;
                 }
             }
@@ -139,7 +143,7 @@ public class GameManager : MonoBehaviour
             {
                 if (Input.GetKeyDown(KeyCode.E))
                 {
-                    waitTime = 10;
+                    waitTime = 5;
                     popUpIndex++;
                 }
             }
@@ -157,7 +161,7 @@ public class GameManager : MonoBehaviour
             {
                 if (Input.GetKeyDown(KeyCode.LeftShift))
                 {
-                    waitTime = 20;
+                    waitTime = 10;
                     popUpIndex++;
                 }
             }
@@ -175,8 +179,11 @@ public class GameManager : MonoBehaviour
             Attack2.enabled = true;
             if (waitTime <= 0)
             {
-                waitTime = 10;
-                popUpIndex++;
+                if (Input.GetKeyDown(KeyCode.H) || Input.GetKeyDown(KeyCode.J) || Input.GetKeyDown(KeyCode.K) || Input.GetKeyDown(KeyCode.L))
+                {
+                    waitTime = 5;
+                    popUpIndex++;
+                }
             }
             else
             {
@@ -188,8 +195,11 @@ public class GameManager : MonoBehaviour
         {
             if (waitTime <= 0)
             {
-                waitTime = 10;
-                popUpIndex++;
+                if (Input.GetKeyDown(KeyCode.Space))
+                {
+                    waitTime = 15;
+                    popUpIndex++;
+                }
             }
             else
             {
@@ -197,11 +207,13 @@ public class GameManager : MonoBehaviour
             }
         }
 
+
         if (popUpIndex == 6)
         {
+            BV.SetActive(true);
             if (waitTime <= 0)
             {
-                waitTime = 10;
+                waitTime = 15;
                 popUpIndex++;
             }
             else
@@ -212,9 +224,10 @@ public class GameManager : MonoBehaviour
 
         if (popUpIndex == 7)
         {
+            BV.SetActive(false);
             if (waitTime <= 0)
             {
-                waitTime = 10;
+                waitTime = 15;
                 popUpIndex++;
             }
             else
@@ -228,7 +241,7 @@ public class GameManager : MonoBehaviour
             PV.SetActive(true);
             if (waitTime <= 0)
             {
-                waitTime = 10;
+                waitTime = 15;
                 popUpIndex++;
             }
             else
@@ -243,7 +256,7 @@ public class GameManager : MonoBehaviour
             GV.SetActive(true);
             if (waitTime <= 0)
             {
-                waitTime = 10;
+                waitTime = 15;
                 popUpIndex++;
             }
             else
@@ -258,7 +271,7 @@ public class GameManager : MonoBehaviour
             SV.SetActive(true);
             if (waitTime <= 0)
             {
-                waitTime = 10;
+                waitTime = 15;
                 popUpIndex++;
             }
             else
@@ -274,7 +287,7 @@ public class GameManager : MonoBehaviour
             adbar2.ActivateAdrenaline();
             if (waitTime <= 0)
             {
-                waitTime = 10;
+                waitTime = 15;
                 popUpIndex++;
             }
             else
@@ -288,7 +301,7 @@ public class GameManager : MonoBehaviour
             RV.SetActive(true);
             if (waitTime <= 0)
             {
-                waitTime = 10;
+                waitTime = 15;
                 popUpIndex++;
             }
             else
@@ -302,7 +315,7 @@ public class GameManager : MonoBehaviour
             RV.SetActive(false);
             if (waitTime <= 0)
             {
-                waitTime = 10;
+                waitTime = 15;
                 popUpIndex++;
             }
             else
@@ -313,6 +326,7 @@ public class GameManager : MonoBehaviour
 
         if (popUpIndex == 14)
         {
+            OV.SetActive(true);
             if (waitTime <= 0)
             {
                 waitTime = 10;
@@ -326,6 +340,7 @@ public class GameManager : MonoBehaviour
 
         if (popUpIndex == 15)
         {
+            OV.SetActive(false);
             if (waitTime <= 0)
             {
                 waitTime = 10;

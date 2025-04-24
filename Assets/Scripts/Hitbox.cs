@@ -9,10 +9,15 @@ public class Hitbox : MonoBehaviour
     public enum HitboxType { Inside, Outside, Grab }
     public HitboxType hitboxType; // Publicly assignable in Inspector
 
+    public LayerMask collisionLayers; // Assign this in Inspector to include arena boundaries
+
     public string attackName; // Name of the specific attack
     public float healthDamage = 10f;
     public float composureDamage = 8f;
     public string hitType;
+
+    [Header("Push Direction")]
+    public Transform attackerPushDirectionObject;
 
     [Header("Grab Settings")]
     public PlayerInput attackerInput; // Use PlayerInput for new input system
@@ -29,6 +34,11 @@ public class Hitbox : MonoBehaviour
     public float maxMashTime = 1.5f;
     private int mashCount = 0;
     private InputAction mashAction;
+
+    [Header("Knockback Settings")]
+    public bool applyImpulse = false; // Toggle per attack in Inspector
+    public float impulseForce = 5f; // Adjustable force magnitude
+    public Vector3 impulseDirection = Vector3.forward; // Direction relative to attacker
 
     private List<InputAction> disabledActions = new List<InputAction>(); // Track disabled actions
 
@@ -82,26 +92,113 @@ public class Hitbox : MonoBehaviour
 
     private void DealDamageToHighestPriorityHurtbox()
     {
-        if (overlappingHurtboxes.Count == 0 || hitboxType == HitboxType.Grab) return;
+        if (overlappingHurtboxes.Count == 0 || hitboxType == HitboxType.Grab)
+            return;
 
         overlappingHurtboxes.Sort((a, b) => a.priority.CompareTo(b.priority));
         Hurtbox targetHurtbox = overlappingHurtboxes[0];
 
-        float damageMultiplier = Random.value <= 0.1f ? 1.5f : Random.value >= 0.9f ? 0.75f : 1f;
-        if (damageMultiplier == 1.5f)
+        if (targetHurtbox == null || targetHurtbox.healthBar == null)
+            return;
+
+        // --- Check for Shattered Legs ---
+        var injuryTracker = targetHurtbox.GetComponentInParent<CharacterInjury>();
+        bool targetHasShatteredLegs = injuryTracker != null && injuryTracker.HasShatteredLegs;
+
+        // --- Damage Calculation ---
+        float damageMultiplier = 1f;
+        float randomValue = Random.value;
+        bool isCritical = randomValue <= 0.1f;
+        bool isWeak = randomValue >= 0.9f;
+
+        if (targetHasShatteredLegs && !isCritical && !isWeak && randomValue > 0.5f)
         {
-            SpawnFloatingText(targetHurtbox.transform.position, true);
-        }
-        else if (damageMultiplier == 0.75f)
-        {
-            SpawnFloatingText(targetHurtbox.transform.position, false);
+            damageMultiplier = 1f; // Force normal hit
         }
 
         float finalHealthDamage = healthDamage * damageMultiplier;
         float finalComposureDamage = composureDamage * damageMultiplier;
 
-        targetHurtbox.TakeDamage(finalHealthDamage, finalComposureDamage, targetHurtbox.isBlockingHurtbox, hitType);
+        // --- Apply Damage ---
+        targetHurtbox.TakeDamage(finalHealthDamage, finalComposureDamage,
+                               targetHurtbox.isBlockingHurtbox, hitType);
+
+        // --- Conditional Impulse Push ---
+        if (applyImpulse && !targetHurtbox.isBlockingHurtbox)
+        {
+            ApplyImpulse(targetHurtbox.transform, finalHealthDamage);
+        }
+
+        // --- Visual/Sound Feedback ---
+        if (isCritical || isWeak)
+        {
+            Vector3 textPosition = targetHurtbox.transform.position + Vector3.up * 1.5f;
+            SpawnFloatingText(textPosition, isCritical);
+        }
+
+        if (injuryTracker != null)
+        {
+            injuryTracker.RecordDamage(targetHurtbox.hurtboxType, finalHealthDamage);
+        }
     }
+
+    private void ApplyImpulse(Transform targetTransform, float damage)
+    {
+        Rigidbody targetRb = targetTransform.GetComponentInParent<Rigidbody>();
+        if (targetRb == null || attackerPushDirectionObject == null)
+        {
+            Debug.LogWarning("Missing Rigidbody or attackerPushDirectionObject");
+            return;
+        }
+
+        Vector3 pushDirection = attackerPushDirectionObject.forward;
+        pushDirection.y = 0f;
+        pushDirection.Normalize();
+
+        float scaledForce = impulseForce * (1 + damage / healthDamage * 0.5f);
+
+        Debug.Log($"Pushing {targetRb.name} in direction {pushDirection} with force {scaledForce}");
+
+        StartCoroutine(SmoothPush(targetRb, pushDirection, scaledForce));
+
+        PlayerState playerState = targetTransform.GetComponentInParent<PlayerState>();
+        if (playerState != null)
+        {
+            playerState.RegisterPush();
+        }
+    }
+
+    private IEnumerator SmoothPush(Rigidbody rb, Vector3 direction, float totalForce)
+    {
+        float duration = 0.25f;
+        float timer = 0f;
+        float distancePerFrame = totalForce * Time.deltaTime;
+
+        bool wasKinematic = rb.isKinematic;
+        //rb.isKinematic = false;
+
+        while (timer < duration)
+        {
+            // Check if we're about to hit a wall or boundary
+            if (rb.SweepTest(direction, out RaycastHit hit, distancePerFrame))
+            {
+                if ((collisionLayers.value & (1 << hit.collider.gameObject.layer)) != 0)
+                {
+                    Debug.Log("Push blocked by: " + hit.collider.name);
+                    break; // Stop push if hitting arena wall or other collider
+                }
+            }
+
+            rb.MovePosition(rb.position + direction * distancePerFrame);
+
+            timer += Time.deltaTime;
+            yield return null;
+        }
+
+        //rb.isKinematic = wasKinematic;
+    }
+
+
 
     private void SpawnFloatingText(Vector3 position, bool isCritical)
     {
@@ -160,6 +257,13 @@ public class Hitbox : MonoBehaviour
         float finalGrabDamage = baseDamage * damageMultiplier;
 
         hurtbox.healthBar.TakeDamage(finalGrabDamage);
+
+        CharacterInjury injurySystem = hurtbox.GetComponentInParent<CharacterInjury>();
+        if (injurySystem != null)
+        {
+            injurySystem.RecordDamage(hurtbox.hurtboxType, finalGrabDamage);
+        }
+
 
         EnableMovementActions(attackerInput);
         EnableMovementActions(targetInput);
