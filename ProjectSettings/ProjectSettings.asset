@@ -13,8 +13,8 @@ PlayerSettings:
   useOnDemandResources: 0
   accelerometerFrequency: 60
   companyName: DefaultCompany
-  productName: My project (1)
-  defaultCursor: {fileID: 0}
+  productName: Project Fight Game
+  defaultCursor: {fileID: 2800000, guid: c37a3cd6aac5ac24d90f974c7e86407a, type: 3}
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902, a: 1}
   m_ShowUnitySplashScreen: 1
@@ -161,7 +161,7 @@ PlayerSettings:
   androidSupportedAspectRatio: 1
   androidMaxAspectRatio: 2.1
   applicationIdentifier:
-    Standalone: com.DefaultCompany.My-project--1-
+    Standalone: com.DefaultCompany.Project-Fight-Game
   buildNumber:
     Standalone: 0
     VisionOS: 0
@@ -283,7 +283,14 @@ PlayerSettings:
   AndroidMinifyDebug: 0
   AndroidValidateAppBundleSize: 1
   AndroidAppBundleSizeToValidate: 150
-  m_BuildTargetIcons: []
+  m_BuildTargetIcons:
+  - m_BuildTarget: 
+    m_Icons:
+    - serializedVersion: 2
+      m_Icon: {fileID: 2800000, guid: 33999291fe2393041a2717b2b34beea3, type: 3}
+      m_Width: 128
+      m_Height: 128
+      m_Kind: 0
   m_BuildTargetPlatformIcons: []
   m_BuildTargetBatching:
   - m_BuildTarget: Standalone
@@ -771,7 +778,7 @@ PlayerSettings:
   cloudProjectId: 85067615-0db2-46de-97d5-e3a4fa2df55d
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
-  projectName: My project (1)
+  projectName: Project Fight Game
   organizationId: faithlessskel
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 0

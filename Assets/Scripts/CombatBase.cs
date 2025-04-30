@@ -110,8 +110,11 @@ public abstract class CombatBase : MonoBehaviour
         isAttacking = true;
         animator.SetTrigger(attackName);
 
+        GameAnalyticsManager.Instance.TrackMechanicUse(attackName, gameObject.name);
+
         StartCoroutine(AttackDuration(attackName));
     }
+
 
     private IEnumerator AttackDuration(string attackName)
     {

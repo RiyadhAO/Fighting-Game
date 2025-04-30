@@ -59,6 +59,7 @@ public class KnockdownTracker : MonoBehaviour
     private void EndGame()
     {
         Debug.Log(playerName + " has been knocked down 3 times! Game Over!");
+        GameAnalyticsManager.Instance.TrackMatchResult(playerName, false);
 
         if (gameOverUI != null)
         {

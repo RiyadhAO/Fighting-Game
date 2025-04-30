@@ -48,11 +48,11 @@ public class GameManager : MonoBehaviour
             Step = character.GetComponent<PlayerSlipStep>();
             Step.enabled = false;
 
-            Attack2 = character.GetComponent<CombatBase>();
+            Attack2 = character2.GetComponent<CombatBase>();
             Attack2.enabled = false;
-            Evade2 = character.GetComponent<PlayerEvasiveRoll>();
+            Evade2 = character2.GetComponent<PlayerEvasiveRoll>();
             Evade2.enabled = false;
-            Step2 = character.GetComponent<PlayerSlipStep>();
+            Step2 = character2.GetComponent<PlayerSlipStep>();
             Step2.enabled = false;
 
             PV.SetActive(false);
