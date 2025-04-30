@@ -15,6 +15,17 @@ public class Hitbox : MonoBehaviour
     public float healthDamage = 10f;
     public float composureDamage = 8f;
     public string hitType;
+    private AudioSource audioSource;
+
+    [Header("Counter Hit UI (Static)")]
+    public GameObject counterHitUIObject; // Assign in Inspector
+    private CanvasGroup counterHitCanvasGroup;
+
+    [Header("Counter Hit Settings")]
+    public float counterHitDamage = 20f; // Counter hit bonus damage
+    public AudioClip counterHitSound;
+    public GameObject counterHitUIPrefab;
+    public Vector3 counterHitUIOffset = new Vector3(0, 2, 0); // Slightly above the character
 
     [Header("Push Direction")]
     public Transform attackerPushDirectionObject;
@@ -42,6 +53,13 @@ public class Hitbox : MonoBehaviour
 
     private List<InputAction> disabledActions = new List<InputAction>(); // Track disabled actions
 
+    private Camera mainCamera;
+
+    void Awake()
+    {
+        mainCamera = Camera.main;
+    }
+
     void Start()
     {
         hitboxCollider = GetComponent<Collider>();
@@ -51,7 +69,20 @@ public class Hitbox : MonoBehaviour
         {
             mashAction = attackerInput.actions["Mash"];
         }
+
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
+
+        // Get CanvasGroup if available
+        if (counterHitUIObject != null)
+        {
+            counterHitCanvasGroup = counterHitUIObject.GetComponent<CanvasGroup>();
+        }
     }
+
 
     public void ActivateHitbox()
     {
@@ -116,8 +147,19 @@ public class Hitbox : MonoBehaviour
             damageMultiplier = 1f; // Force normal hit
         }
 
-        float finalHealthDamage = healthDamage * damageMultiplier;
+        // Check if it's a counter hit
+        CombatBase targetCombatBase = targetHurtbox.GetComponentInParent<CombatBase>();
+        bool isCounterHit = targetCombatBase != null && targetCombatBase.isAttacking;
+
+        float finalHealthDamage = (isCounterHit ? counterHitDamage : healthDamage) * damageMultiplier;
         float finalComposureDamage = composureDamage * damageMultiplier;
+
+        if (isCounterHit)
+        {
+            Debug.Log("Counter Hit! Dealt " + finalHealthDamage + " damage to " + targetHurtbox.name);
+
+            PlayCounterHitFeedback(targetHurtbox.transform.position);
+        }
 
         // --- Apply Damage ---
         targetHurtbox.TakeDamage(finalHealthDamage, finalComposureDamage,
@@ -141,6 +183,51 @@ public class Hitbox : MonoBehaviour
             injuryTracker.RecordDamage(targetHurtbox.hurtboxType, finalHealthDamage);
         }
     }
+
+    private void PlayCounterHitFeedback(Vector3 targetPosition)
+    {
+        if (counterHitSound != null && audioSource != null)
+            audioSource.PlayOneShot(counterHitSound);
+
+        if (counterHitUIPrefab != null)
+        {
+            Vector3 spawnPosition = targetPosition + new Vector3(8f, -1.5f, 0f);
+            GameObject uiInstance = Instantiate(counterHitUIPrefab, spawnPosition, Quaternion.identity);
+            StartCoroutine(AnimateCounterHitUI(uiInstance));
+        }
+    }
+
+
+
+    private IEnumerator AnimateCounterHitUI(GameObject uiObject)
+    {
+        float duration = 1f;
+        float elapsed = 0f;
+
+        Transform uiTransform = uiObject.transform;
+        Vector3 initialScale = Vector3.one;
+        Vector3 targetScale = Vector3.one * 1.5f;
+
+        CanvasGroup canvasGroup = uiObject.GetComponent<CanvasGroup>();
+        if (canvasGroup == null)
+        {
+            canvasGroup = uiObject.AddComponent<CanvasGroup>();
+        }
+        canvasGroup.alpha = 1f;
+
+        while (elapsed < duration)
+        {
+            float t = elapsed / duration;
+            uiTransform.localScale = Vector3.Lerp(initialScale, targetScale, t);
+            canvasGroup.alpha = Mathf.Lerp(1f, 0f, t);
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        Destroy(uiObject);
+    }
+
 
     private void ApplyImpulse(Transform targetTransform, float damage)
     {

@@ -1421,14 +1421,14 @@ AnimationClip:
     floatParameter: 0
     intParameter: 6
     messageOptions: 0
-  - time: 0.36666667
+  - time: 0.33333334
     functionName: ActivateHitbox
     data: FrontKick
     objectReferenceParameter: {fileID: 0}
     floatParameter: 0
     intParameter: 0
     messageOptions: 0
-  - time: 0.48333332
+  - time: 0.45
     functionName: DeactivateHitbox
     data: FrontKick
     objectReferenceParameter: {fileID: 0}

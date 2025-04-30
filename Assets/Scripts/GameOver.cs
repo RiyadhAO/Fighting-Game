@@ -24,6 +24,7 @@ public class GameOver : MonoBehaviour
 
         Time.timeScale = 1f; // Resume time
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        GameAnalyticsManager.Instance.TrackGameModeStart("MainGame");
     }
 
     public void GoToMainMenu()
